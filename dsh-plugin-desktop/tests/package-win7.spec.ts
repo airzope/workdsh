@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -121,6 +121,7 @@ describe('Windows 7 offline afterAll hook', () => {
     await expect(verifyWindows7OfflineBuild({ outDir: join(root, 'dist', 'win7') }, { desktopRoot: root, env: {}, verifyFuses }))
       .rejects.toThrow(/must wrap/u)
 
-    expect(checked).toEqual([join(root, 'dist', 'win-unpacked', 'WorkDSH.exe')])
+    // The hook resolves links such as macOS /var -> /private/var and Windows 8.3 names.
+    expect(checked).toEqual([join(realpathSync(root), 'dist', 'win-unpacked', 'WorkDSH.exe')])
   })
 })
