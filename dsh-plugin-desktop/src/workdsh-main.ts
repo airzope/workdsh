@@ -13,9 +13,11 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
+import { release } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
+import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
 const PROFILE_NAME = 'workdsh'
 const READY_PATTERN = /dsh web:\s+(http:\/\/127\.0\.0\.1:\d+\/?\?token=[^\s]+)/u
@@ -206,6 +208,11 @@ function stopRuntime(): void {
   quitting = true
   if (runtime !== undefined && runtime.exitCode === null) runtime.kill('SIGTERM')
   runtime = undefined
+}
+
+// Browser workers are the same executable, so they take the same policy.
+if (applyWindows7Compatibility(app, { platform: process.platform, release: release(), env: process.env })) {
+  process.stderr.write('WorkDSH is using its Windows 7 compatibility mode (VxKex NEXT)\n')
 }
 
 const worker = browserWorkerRequest()
