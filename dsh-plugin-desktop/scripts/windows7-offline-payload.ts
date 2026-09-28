@@ -1,13 +1,13 @@
 /** Stage the Windows 7 offline installer payload: VxKex NEXT and the VC++ runtime. */
 
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { preparePinnedAsset, type FetchBytes } from './pinned-asset.ts'
 import {
   VXKEX_NEXT_INSTALLED_VERSION,
   VXKEX_NEXT_VERSION,
   prepareBundledVxKex,
-  type FetchBytes,
 } from './vxkex-next.ts'
 
 /** A four-part Windows file version. */
@@ -25,17 +25,25 @@ export interface Windows7OfflinePayload {
   readonly vcRedistVersion: FileVersion
 }
 
-/** Host boundary for locating and authenticating the Microsoft VC++ redistributable. */
+/** Host boundary for an explicitly supplied VC++ redistributable. */
 export interface VcRedistHost {
   readonly env: NodeJS.ProcessEnv
-  /** Visual Studio installation roots, newest first. */
-  readonly visualStudioRoots: () => string[]
   /** Authenticode-verify a Microsoft-signed file and return its file version string. */
   readonly microsoftFileVersion: (path: string) => string
 }
 
-/** An explicit redistributable path, for machines without Visual Studio. */
+/** An explicit redistributable path, for builds that cannot download it. */
 export const WINDOWS7_VC_REDIST_OVERRIDE = 'WORKDSH_WIN7_VC_REDIST'
+
+/**
+ * The last VC++ v14 redistributable of the Visual Studio 2022 stream, which
+ * still supports Windows 7 SP1 (with KB3033929). Microsoft's versioned URL
+ * embeds the same SHA-256; the 14.50+ stream requires Windows 10.
+ */
+export const VC_REDIST_VERSION = '14.44.35211.0'
+export const VC_REDIST_SHA256 = 'cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b'
+export const VC_REDIST_URL = 'https://download.visualstudio.microsoft.com/download/pr/7ebf5fdb-36dc-4145-b0a0-90d3d5990a61/'
+  + `${VC_REDIST_SHA256.toUpperCase()}/VC_redist.x64.exe`
 
 /**
  * Parse a dotted Windows file version.
@@ -53,18 +61,14 @@ export function parseFileVersion(text: string): FileVersion {
 }
 
 /**
- * The VC++ 2015-2022 (v14) runtime series still installs on Windows 7 SP1 up
- * to 14.4x; 14.50 (Visual Studio 2026) requires Windows 10. The Office engine
- * imports `msvcp140_2.dll`, which first shipped in 14.14.
+ * The VC++ v14 series still installs on Windows 7 SP1 up to 14.4x; 14.50
+ * (Visual Studio 2026) requires Windows 10. The Office engine imports
+ * `msvcp140_2.dll`, which first shipped in 14.14.
  * @param version - Redistributable file version.
  * @returns Whether it can serve the Windows 7 package.
  */
 export function isWindows7VcRedist(version: FileVersion): boolean {
   return version.major === 14 && version.minor >= 29 && version.minor < 50
-}
-
-function compareVersions(left: FileVersion, right: FileVersion): number {
-  return left.major - right.major || left.minor - right.minor || left.build - right.build || left.revision - right.revision
 }
 
 function formatVersion(version: FileVersion): string {
@@ -73,35 +77,6 @@ function formatVersion(version: FileVersion): string {
 
 function hex(value: number): string {
   return `0x${(value >>> 0).toString(16).toUpperCase().padStart(8, '0')}`
-}
-
-/**
- * Choose the redistributable: the explicit override, else the newest
- * Windows 7-capable `vc_redist.x64.exe` shipped with an installed Visual Studio.
- * @param host - Environment, Visual Studio discovery and Authenticode boundary.
- * @returns The redistributable path and its verified version.
- */
-export function locateWindows7VcRedist(host: VcRedistHost): { path: string, version: FileVersion } {
-  const override = host.env[WINDOWS7_VC_REDIST_OVERRIDE]
-  const candidates = override !== undefined && override.length > 0
-    ? [override]
-    : host.visualStudioRoots().flatMap((root) => {
-        const redist = join(root, 'VC', 'Redist', 'MSVC')
-        if (!existsSync(redist)) return []
-        return readdirSync(redist).map(name => join(redist, name, 'vc_redist.x64.exe')).filter(path => existsSync(path))
-      })
-  const usable = candidates.flatMap((path) => {
-    const version = parseFileVersion(host.microsoftFileVersion(path))
-    return isWindows7VcRedist(version) ? [{ path, version }] : []
-  }).sort((left, right) => compareVersions(right.version, left.version))
-  const selected = usable[0]
-  if (selected === undefined) {
-    throw new Error(
-      `No Windows 7-capable Microsoft vc_redist.x64.exe (14.29-14.4x) was found among ${String(candidates.length)} candidate(s). `
-      + `Install the Visual Studio 2022 C++ workload or set ${WINDOWS7_VC_REDIST_OVERRIDE} to a Microsoft-signed vc_redist.x64.exe.`,
-    )
-  }
-  return selected
 }
 
 /**
@@ -125,47 +100,66 @@ export function renderWindows7PayloadInclude(payload: Windows7OfflinePayload): s
   ].join('\n')
 }
 
-function powershell(script: string, env: NodeJS.ProcessEnv): string {
-  const result = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
-    encoding: 'utf8',
-    env,
-    timeout: 120_000,
-  })
-  if (result.error !== undefined) throw result.error
-  if (result.status !== 0) throw new Error(`PowerShell failed (${String(result.status)}): ${result.stderr.trim()}`)
-  return result.stdout.trim()
+/**
+ * Stage the VC++ redistributable: an explicit Microsoft-signed, Windows
+ * 7-capable file when the override is set, otherwise the pinned download.
+ * @param stage - Staging directory.
+ * @param host - Environment and Authenticode boundary for the override.
+ * @param fetchBytes - Download boundary.
+ * @returns The staged path and its version.
+ */
+export async function prepareWindows7VcRedist(
+  stage: string,
+  host: VcRedistHost,
+  fetchBytes?: FetchBytes,
+): Promise<{ path: string, version: FileVersion }> {
+  const path = join(stage, 'vc_redist.x64.exe')
+  const override = host.env[WINDOWS7_VC_REDIST_OVERRIDE]
+  if (override === undefined || override.length === 0) {
+    await preparePinnedAsset(
+      { label: `Microsoft VC++ redistributable ${VC_REDIST_VERSION}`, url: VC_REDIST_URL, sha256: VC_REDIST_SHA256 },
+      path,
+      fetchBytes,
+    )
+    return { path, version: parseFileVersion(VC_REDIST_VERSION) }
+  }
+  const version = parseFileVersion(host.microsoftFileVersion(override))
+  if (!isWindows7VcRedist(version)) {
+    throw new Error(`${WINDOWS7_VC_REDIST_OVERRIDE} is VC++ ${formatVersion(version)}; Windows 7 needs 14.29-14.4x`)
+  }
+  mkdirSync(stage, { recursive: true })
+  copyFileSync(override, path)
+  return { path, version }
 }
 
-/** Native Windows discovery through vswhere and Get-AuthenticodeSignature. */
+/** Native Windows Authenticode check through Windows PowerShell. */
 export function nativeVcRedistHost(env: NodeJS.ProcessEnv = process.env): VcRedistHost {
   return {
     env,
-    visualStudioRoots: () => {
-      const vswhere = join(env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)', 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
-      if (!existsSync(vswhere)) return []
-      const result = spawnSync(vswhere, ['-all', '-prerelease', '-products', '*', '-sort', '-property', 'installationPath'], {
-        encoding: 'utf8',
-        env,
-      })
-      if (result.error !== undefined || result.status !== 0) return []
-      return result.stdout.split(/\r?\n/u).map(line => line.trim()).filter(Boolean)
+    microsoftFileVersion: (path) => {
+      // A PowerShell 7 parent (such as a GitHub Actions step) exports its own
+      // PSModulePath, which stops Windows PowerShell from loading its modules.
+      const childEnv = Object.fromEntries(Object.entries(env).filter(([name]) => name.toUpperCase() !== 'PSMODULEPATH'))
+      const result = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', [
+        `$path = '${path.replaceAll('\'', '\'\'')}'`,
+        '$signature = Get-AuthenticodeSignature -LiteralPath $path',
+        'if ($signature.Status -ne \'Valid\' -or $signature.SignerCertificate.Subject -notmatch \'O=Microsoft Corporation\') {',
+        '  [Console]::Error.WriteLine("$path is not a valid Microsoft-signed file: $($signature.Status)"); exit 3',
+        '}',
+        '(Get-Item -LiteralPath $path).VersionInfo.FileVersion',
+      ].join('\n')], { encoding: 'utf8', env: childEnv, timeout: 120_000 })
+      if (result.error !== undefined) throw result.error
+      if (result.status !== 0) throw new Error(`PowerShell failed (${String(result.status)}): ${result.stderr.trim()}`)
+      return result.stdout.trim()
     },
-    microsoftFileVersion: path => powershell([
-      `$path = '${path.replaceAll('\'', '\'\'')}'`,
-      '$signature = Get-AuthenticodeSignature -LiteralPath $path',
-      'if ($signature.Status -ne \'Valid\' -or $signature.SignerCertificate.Subject -notmatch \'O=Microsoft Corporation\') {',
-      '  [Console]::Error.WriteLine("$path is not a valid Microsoft-signed file: $($signature.Status)"); exit 3',
-      '}',
-      '(Get-Item -LiteralPath $path).VersionInfo.FileVersion',
-    ].join('\n'), env),
   }
 }
 
 /**
  * Stage every file the Windows 7 offline installer compiles in, and its NSIS definitions.
  * @param desktopRoot - Desktop package root.
- * @param host - VC++ redistributable discovery boundary.
- * @param fetchBytes - VxKex download boundary.
+ * @param host - Override boundary for the VC++ redistributable.
+ * @param fetchBytes - Download boundary.
  * @returns The staged payload.
  */
 export async function prepareWindows7OfflinePayload(
@@ -176,10 +170,8 @@ export async function prepareWindows7OfflinePayload(
   const stage = join(desktopRoot, 'build', '.win7')
   mkdirSync(stage, { recursive: true })
   const vxkexSetup = await prepareBundledVxKex(desktopRoot, fetchBytes)
-  const located = locateWindows7VcRedist(host)
-  const vcRedist = join(stage, 'vc_redist.x64.exe')
-  copyFileSync(located.path, vcRedist)
-  const payload = { vxkexSetup, vcRedist, vcRedistVersion: located.version }
+  const vcRedist = await prepareWindows7VcRedist(stage, host, fetchBytes)
+  const payload = { vxkexSetup, vcRedist: vcRedist.path, vcRedistVersion: vcRedist.version }
   writeFileSync(join(stage, 'offline-payload.nsh'), renderWindows7PayloadInclude(payload))
   return payload
 }

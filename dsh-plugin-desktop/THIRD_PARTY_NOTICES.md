@@ -36,7 +36,9 @@ older:
   permission from its authors, which the WorkDSH maintainers are responsible
   for holding. VxKex NEXT contains DLLs taken from newer Windows releases and
   remains subject to its authors' and Microsoft's terms.
-- The Microsoft Visual C++ 2015-2022 Redistributable (x64), 14.29-14.4x,
+- The Microsoft Visual C++ 2015-2022 Redistributable (x64) 14.44.35211
+  (`VC_redist.x64.exe`, SHA-256
+  `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`),
   distributed under the Microsoft Software License Terms for Visual Studio.
 
 This file intentionally does not freeze a dependency inventory from an older

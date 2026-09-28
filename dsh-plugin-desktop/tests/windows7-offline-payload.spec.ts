@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -11,9 +11,12 @@ import {
   prepareBundledVxKex,
 } from '../scripts/vxkex-next.ts'
 import {
+  VC_REDIST_SHA256,
+  VC_REDIST_URL,
+  VC_REDIST_VERSION,
   isWindows7VcRedist,
-  locateWindows7VcRedist,
   parseFileVersion,
+  prepareWindows7VcRedist,
   renderWindows7PayloadInclude,
   type VcRedistHost,
 } from '../scripts/windows7-offline-payload.ts'
@@ -64,43 +67,41 @@ describe('Windows 7 VC++ redistributable', () => {
     expect(isWindows7VcRedist(parseFileVersion('14.50.35710.0'))).toBe(false)
   })
 
-  function host(root: string, versions: Record<string, string>, env: NodeJS.ProcessEnv = {}): VcRedistHost {
-    for (const directory of Object.keys(versions)) {
-      if (directory.startsWith('/')) continue
-      mkdirSync(join(root, 'VC', 'Redist', 'MSVC', directory), { recursive: true })
-      writeFileSync(join(root, 'VC', 'Redist', 'MSVC', directory, 'vc_redist.x64.exe'), 'MZ')
-    }
-    return {
-      env,
-      visualStudioRoots: () => [root],
-      microsoftFileVersion: (path) => {
-        const entry = Object.entries(versions).find(([directory]) => path.includes(directory))
-        if (entry === undefined) throw new Error(`unexpected ${path}`)
-        return entry[1]
-      },
-    }
-  }
-
-  it('selects the newest Windows 7-capable redistributable from Visual Studio', () => {
-    const root = temporary()
-    const selected = locateWindows7VcRedist(host(root, {
-      '14.38.33130': '14.38.33130.0',
-      '14.44.35112': '14.44.35211.0',
-      '14.50.35710': '14.50.35710.0',
-    }))
-
-    expect(selected.path).toBe(join(root, 'VC', 'Redist', 'MSVC', '14.44.35112', 'vc_redist.x64.exe'))
-    expect(selected.version).toEqual({ major: 14, minor: 44, build: 35211, revision: 0 })
+  it('pins the last Visual Studio 2022-stream redistributable by its Microsoft URL', () => {
+    expect(VC_REDIST_VERSION).toBe('14.44.35211.0')
+    expect(isWindows7VcRedist(parseFileVersion(VC_REDIST_VERSION))).toBe(true)
+    expect(VC_REDIST_URL).toBe(
+      `https://download.visualstudio.microsoft.com/download/pr/7ebf5fdb-36dc-4145-b0a0-90d3d5990a61/${VC_REDIST_SHA256.toUpperCase()}/VC_redist.x64.exe`,
+    )
   })
 
-  it('uses an explicit redistributable and still rejects one without Windows 7 support', () => {
-    const root = temporary()
-    expect(locateWindows7VcRedist(host(root, { '/override/vc_redist.x64.exe': '14.42.34433.0' }, {
-      WORKDSH_WIN7_VC_REDIST: '/override/vc_redist.x64.exe',
-    })).path).toBe('/override/vc_redist.x64.exe')
-    expect(() => locateWindows7VcRedist(host(root, { '/override/new.exe': '14.50.35710.0' }, {
-      WORKDSH_WIN7_VC_REDIST: '/override/new.exe',
-    }))).toThrow(/No Windows 7-capable/u)
+  function host(env: NodeJS.ProcessEnv, version = '14.44.35211.0'): VcRedistHost {
+    return { env, microsoftFileVersion: () => version }
+  }
+
+  it('downloads the pinned redistributable and rejects other bytes', async () => {
+    const stage = temporary()
+    const urls: string[] = []
+
+    await expect(prepareWindows7VcRedist(stage, host({}), async (url) => {
+      urls.push(url)
+      return Buffer.from('not the redistributable')
+    })).rejects.toThrow(/checksum mismatch/u)
+
+    expect(urls).toEqual([VC_REDIST_URL])
+    expect(existsSync(join(stage, 'vc_redist.x64.exe'))).toBe(false)
+  })
+
+  it('stages an explicit Microsoft-signed redistributable only when it supports Windows 7', async () => {
+    const stage = temporary()
+    const source = join(temporary(), 'vc_redist.x64.exe')
+    writeFileSync(source, 'MZ')
+    const fetchBytes = async (): Promise<Buffer> => { throw new Error('must not download') }
+
+    await expect(prepareWindows7VcRedist(stage, host({ WORKDSH_WIN7_VC_REDIST: source }, '14.42.34433.0'), fetchBytes))
+      .resolves.toEqual({ path: join(stage, 'vc_redist.x64.exe'), version: parseFileVersion('14.42.34433.0') })
+    await expect(prepareWindows7VcRedist(stage, host({ WORKDSH_WIN7_VC_REDIST: source }, '14.51.36231.0'), fetchBytes))
+      .rejects.toThrow(/Windows 7 needs 14\.29-14\.4x/u)
   })
 
   it('renders NSIS definitions with split version words and escaped paths', () => {

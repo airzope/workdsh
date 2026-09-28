@@ -12,7 +12,7 @@ WorkDSH 借助第三方兼容层 [VxKex NEXT](https://github.com/YuZhouRen86/VxK
 
 ## 离线安装包
 
-`scripts/package-win7.ts` 在标准 Windows 包之后运行。它先审计 `dist/win-unpacked`（见下文），再从 VxKex NEXT 发布页下载 `KexSetup_Release_1_2_3_2463.exe` 并只接受固定的 SHA-256；然后从已安装的 Visual Studio 中取最新的、支持 Windows 7 的 `vc_redist.x64.exe`（14.29-14.4x；14.50 要求 Windows 10），并校验其 Microsoft Authenticode 签名。二者的路径和版本写入 `build/.win7/offline-payload.nsh`。electron-builder 随后以 `--prepackaged` 和 `build/installer-win7.nsh` 把已验证的应用封装到 `dist/win7`。一个范围收窄的 afterAll 钩子在那里重新检查可执行文件的 fuse，因为标准构建已对同一目录运行过打包运行时冒烟检查。
+`scripts/package-win7.ts` 在标准 Windows 包之后运行。它先审计 `dist/win-unpacked`（见下文），再从 VxKex NEXT 发布页下载 `KexSetup_Release_1_2_3_2463.exe` 并只接受固定的 SHA-256；然后从 Microsoft 带版本号的地址下载 `VC_redist.x64.exe` 14.44.35211，只接受该地址中嵌入的 SHA-256。该版本是 Visual Studio 2022 系列的最后一版；Visual Studio 2026 附带的 14.50+ 系列要求 Windows 10，因此构建机自带的 Visual Studio 无法提供它。也可以用 `WORKDSH_WIN7_VC_REDIST` 指定一个经 Authenticode 校验的、Microsoft 签名的 14.29-14.4x 可再发行组件包。二者的路径和版本写入 `build/.win7/offline-payload.nsh`。electron-builder 随后以 `--prepackaged` 和 `build/installer-win7.nsh` 把已验证的应用封装到 `dist/win7`。一个范围收窄的 afterAll 钩子在那里重新检查可执行文件的 fuse，因为标准构建已对同一目录运行过打包运行时冒烟检查。
 
 在 NT 6.1 上，离线安装包在 `System32\msvcp140_2.dll` 缺失或旧于内置版本时安装 VC++ 运行库，在 `KexCfg.exe` 缺失或 `InstalledVersion` 旧于 1.2.3.2463 时安装 VxKex NEXT。二者都经 UAC `runas` 动词静默运行，事后依据文件与注册表而非退出码核实结果。Office 引擎导入 `msvcp140*.dll` 却不自带它，而 VxKex NEXT 会有意重写 `System32` 中新版 VC++ 运行库的导入。
 
