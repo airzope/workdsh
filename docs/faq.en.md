@@ -14,11 +14,14 @@ Check the actual assets attached to [GitHub Releases](https://github.com/techfla
 
 Windows 7 SP1 x64 is supported on a best-effort basis through the third-party compatibility layer [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) ([Gitee mirror](https://gitee.com/YuZhouRen86/VxKex-NEXT)). Official Electron, Node.js, and Python releases no longer support Windows 7.
 
-1. Install Service Pack 1 and updates KB2533623 and KB2670838, then install the latest VxKex NEXT.
-2. Run the same Windows x64 Setup. On Windows 7 the installer uses VxKex NEXT's `KexCfg.exe` to enable VxKex NEXT for `WorkDSH.exe`, keeping it inherited by child processes. Without VxKex NEXT, setup stops and offers the download page. Upgrades keep this setting; uninstalling removes it.
-3. On Windows 7, WorkDSH sets `NODE_SKIP_PLATFORM_CHECK=1` for its bundled Node.js and turns off GPU hardware acceleration.
+Use the **Windows 7 x64 offline installer** (`WorkDSH-<version>-win7-x64-Offline-Setup.exe`); installation needs no network:
 
-The Portable ZIP bypasses the installer: after extracting it, right-click `WorkDSH.exe`, open Properties > VxKex, check "Enable VxKex NEXT for this program", and leave "Disable VxKex NEXT for child processes" unchecked. If strong version spoofing in VxKex NEXT hides Windows 7 from WorkDSH, set the environment variable `WORKDSH_WINDOWS7_COMPAT=1`. Windows 8/8.1 and 32-bit Windows are not supported. When reporting a Windows 7 problem, include the VxKex NEXT version.
+1. It contains everything the standard package does: Electron (which also serves as the built-in browser), Node.js 24, Python 3.12 with python-docx, python-pptx, openpyxl, XlsxWriter, numpy, pandas, Pillow, and lxml, the Word/PowerPoint/Excel Office skills, the LibreOffice Kit engine for rendering and PDF conversion, and the DSH Profile.
+2. On Windows 7 it also carries VxKex NEXT 1.2.3.2463 and the Microsoft VC++ 2015-2022 x64 runtime, and installs each silently only when it is missing or older. Both need administrator rights, so UAC prompts appear. It then uses VxKex NEXT's `KexCfg.exe` to enable VxKex NEXT for `WorkDSH.exe`, keeping it inherited by child processes. Upgrades keep this setting; uninstalling removes it.
+3. At the end, setup checks for Service Pack 1, KB2533623, KB2670838, and Windows Management Framework 5.1 (PowerShell 5.1, which DSH's command tool needs). These are Windows updates that the installer cannot redistribute; any that are missing are listed with a prompt to get them from Microsoft.
+4. On Windows 7, WorkDSH sets `NODE_SKIP_PLATFORM_CHECK=1` for its bundled Node.js and turns off GPU hardware acceleration.
+
+The standard Windows x64 Setup also installs on Windows 7, but only after VxKex NEXT and the VC++ runtime are already present. The Portable ZIP bypasses the installer: after extracting it, right-click `WorkDSH.exe`, open Properties > VxKex, check "Enable VxKex NEXT for this program", and leave "Disable VxKex NEXT for child processes" unchecked. If strong version spoofing in VxKex NEXT hides Windows 7 from WorkDSH, set the environment variable `WORKDSH_WINDOWS7_COMPAT=1`. Windows 8/8.1 and 32-bit Windows are not supported. When reporting a Windows 7 problem, include the VxKex NEXT version.
 
 ## Must I install Node.js, Python, or DSH myself?
 
