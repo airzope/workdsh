@@ -54,5 +54,9 @@ run('Prepare bundled Python and Node.js', corepack, ['yarn', 'workspace', 'dsh-p
 run('Build the Desktop installer', process.execPath, [join(root, 'dsh-plugin-desktop', 'scripts', platform === 'win32' ? 'package-win.ts' : 'package-mac.ts')], {
   env: { ...runtimeEnv, DSH_PACKAGE_CHECK_ALREADY_RAN: '1' },
 })
+if (platform === 'win32') {
+  // Same application directory, wrapped with VxKex NEXT and the VC++ runtime.
+  run('Build the Windows 7 x64 offline installer', process.execPath, [join(root, 'dsh-plugin-desktop', 'scripts', 'package-win7.ts')], { env: runtimeEnv })
+}
 
 console.log(`\nDesktop package completed using ${source === 'local' ? 'this commit\'s Web Profile' : 'the published Web Profile'}.`)

@@ -104,7 +104,68 @@ Var pid
   ${loop}
 !macroend
 
+; Set _RESULT to 1 when the 64-bit VC++ runtime used by the Office engine is
+; present, and in the offline installer at least the bundled version.
+; Uses $R1 and $R2.
+!macro WORKDSH_FIND_VCRUNTIME _RESULT
+  StrCpy ${_RESULT} 0
+  ${DisableX64FSRedirection}
+  ClearErrors
+  GetDLLVersion "$WINDIR\System32\msvcp140_2.dll" $R1 $R2
+  ${EnableX64FSRedirection}
+  ${ifNot} ${Errors}
+    StrCpy ${_RESULT} 1
+    !ifdef WORKDSH_BUNDLED_VCREDIST_MS
+      ${if} $R1 U< ${WORKDSH_BUNDLED_VCREDIST_MS}
+        StrCpy ${_RESULT} 0
+      ${elseIf} $R1 = ${WORKDSH_BUNDLED_VCREDIST_MS}
+      ${andIf} $R2 U< ${WORKDSH_BUNDLED_VCREDIST_LS}
+        StrCpy ${_RESULT} 0
+      ${endIf}
+    !endif
+  ${endIf}
+!macroend
+
+; Warn about Windows 7 prerequisites that setup does not install. VxKex
+; NEXT's own check is skipped in silent mode. Uses $R0-$R3.
+!macro WORKDSH_WARN_WINDOWS7_PREREQUISITES
+  StrCpy $R0 ""
+  ${ifNot} ${AtLeastServicePack} 1
+    StrCpy $R0 "$R0$\r$\n  - Windows 7 Service Pack 1"
+  ${endIf}
+  System::Call 'kernel32::GetModuleHandle(t "kernel32.dll") p .R1'
+  System::Call 'kernel32::GetProcAddress(p R1, m "AddDllDirectory") p .R1'
+  ${if} $R1 == 0
+    StrCpy $R0 "$R0$\r$\n  - KB2533623 (DllDirectories)"
+  ${endIf}
+  ; KB2670838 (Platform Update) raises dxgi.dll from 6.1 to 6.2.
+  ${DisableX64FSRedirection}
+  ClearErrors
+  GetDLLVersion "$WINDIR\System32\dxgi.dll" $R1 $R2
+  ${EnableX64FSRedirection}
+  ${if} ${Errors}
+  ${orIf} $R1 U< 0x00060002
+    StrCpy $R0 "$R0$\r$\n  - KB2670838 (Platform Update)"
+  ${endIf}
+  ; DSH's command tool needs Windows PowerShell 5.1; Windows 7 ships 2.0.
+  ReadRegStr $R1 HKLM "SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine" "PowerShellVersion"
+  StrCpy $R1 $R1 2
+  ${if} $R1 != "5."
+    StrCpy $R0 "$R0$\r$\n  - Windows Management Framework 5.1 (KB3191566)"
+  ${endIf}
+  !insertmacro WORKDSH_FIND_VCRUNTIME $R3
+  ${if} $R3 != 1
+    StrCpy $R0 "$R0$\r$\n  - Microsoft Visual C++ 2015-2022 x64 runtime"
+  ${endIf}
+  ${if} $R0 != ""
+    DetailPrint "Missing Windows 7 prerequisites:$R0"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "WorkDSH 已安装，但这台 Windows 7 还缺少以下组件；请从 Microsoft 获取并安装，否则部分功能（命令执行、Office 渲染与 PDF 转换、界面显示）可能无法工作：$R0$\r$\n$\r$\nWorkDSH is installed, but this Windows 7 computer is missing the components below. Install them from Microsoft, or some features (command execution, Office rendering and PDF conversion, display) may not work." /SD IDOK
+  ${endIf}
+!macroend
+
 !macro customInit
+  ; The offline installer carries VxKex NEXT and installs it in customInstall.
+  !ifndef WORKDSH_BUNDLED_VXKEX
   ${if} ${IsWin7}
   ${orIf} ${IsWin2008R2}
     Push $R0
@@ -118,7 +179,42 @@ Var pid
     ${endIf}
     Pop $R0
   ${endIf}
+  !endif
 !macroend
+
+!ifdef WORKDSH_BUNDLED_VXKEX
+; Install or upgrade the bundled VxKex NEXT when it is missing or older.
+; KexSetup needs administrator rights, so it runs through the UAC "runas"
+; verb; its result is read back from the registry rather than an exit code.
+; Uses $R0 and $R1.
+!macro WORKDSH_INSTALL_BUNDLED_VXKEX
+  !insertmacro WORKDSH_FIND_KEXCFG $R0
+  ReadRegDWORD $R1 HKLM "Software\VXsoft\VxKex" "InstalledVersion"
+  ${if} $R0 == ""
+  ${orIf} $R1 U< ${WORKDSH_BUNDLED_VXKEX_VERSION}
+    DetailPrint "Installing VxKex NEXT ${WORKDSH_BUNDLED_VXKEX_LABEL}"
+    InitPluginsDir
+    File "/oname=$PLUGINSDIR\VxKexNextSetup.exe" "${WORKDSH_BUNDLED_VXKEX}"
+    ExecShellWait "runas" "$PLUGINSDIR\VxKexNextSetup.exe" "/SILENTUNATTEND"
+    Delete "$PLUGINSDIR\VxKexNextSetup.exe"
+    ReadRegDWORD $R1 HKLM "Software\VXsoft\VxKex" "InstalledVersion"
+    DetailPrint "VxKex NEXT InstalledVersion: $R1"
+  ${endIf}
+!macroend
+
+; Install the bundled Microsoft VC++ runtime when it is missing or older; the
+; Office engine imports it and Windows 7 does not ship it. Uses $R0-$R2.
+!macro WORKDSH_INSTALL_BUNDLED_VCREDIST
+  !insertmacro WORKDSH_FIND_VCRUNTIME $R0
+  ${if} $R0 != 1
+    DetailPrint "Installing Microsoft Visual C++ runtime ${WORKDSH_BUNDLED_VCREDIST_LABEL}"
+    InitPluginsDir
+    File "/oname=$PLUGINSDIR\vc_redist.x64.exe" "${WORKDSH_BUNDLED_VCREDIST}"
+    ExecShellWait "runas" "$PLUGINSDIR\vc_redist.x64.exe" "/install /quiet /norestart"
+    Delete "$PLUGINSDIR\vc_redist.x64.exe"
+  ${endIf}
+!macroend
+!endif
 
 !macro customInstall
   ${if} ${IsWin7}
@@ -128,8 +224,14 @@ Var pid
     Push $R2
     Push $R3
     Push $R4
+    !ifdef WORKDSH_BUNDLED_VXKEX
+      !insertmacro WORKDSH_INSTALL_BUNDLED_VCREDIST
+      !insertmacro WORKDSH_INSTALL_BUNDLED_VXKEX
+    !endif
     !insertmacro WORKDSH_FIND_KEXCFG $R0
-    ${if} $R0 != ""
+    ${if} $R0 == ""
+      MessageBox MB_OK|MB_ICONSTOP "未检测到 VxKex NEXT，WorkDSH 无法在 Windows 7 上启动。请安装 VxKex NEXT（出现管理员授权提示时请允许），然后重新运行本安装程序。$\r$\n$\r$\nVxKex NEXT was not found, so WorkDSH cannot start on Windows 7. Install VxKex NEXT (approve the administrator prompt if one appears), then run this installer again." /SD IDOK
+    ${else}
       DetailPrint "Enabling VxKex NEXT for $INSTDIR\${APP_EXECUTABLE_FILENAME}"
       ; Keep the user's version-spoof choices. Propagation and the Chromium
       ; app-specific fixes are required by WorkDSH, so they are always reset.
@@ -147,6 +249,7 @@ Var pid
         MessageBox MB_OK|MB_ICONEXCLAMATION "安装程序无法确认已为 WorkDSH 启用 VxKex NEXT。请右键单击 $INSTDIR\${APP_EXECUTABLE_FILENAME}，选择“属性” > “VxKex”，勾选“为此程序启用 VxKex NEXT”。$\r$\n$\r$\nSetup could not confirm that VxKex NEXT is enabled for WorkDSH. Right-click $INSTDIR\${APP_EXECUTABLE_FILENAME}, choose Properties > VxKex, and check $\"Enable VxKex NEXT for this program$\"." /SD IDOK
       ${endIf}
     ${endIf}
+    !insertmacro WORKDSH_WARN_WINDOWS7_PREREQUISITES
     Pop $R4
     Pop $R3
     Pop $R2

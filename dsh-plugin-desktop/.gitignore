@@ -7,3 +7,4 @@ build/.workdsh-release-*
 build/.workdsh-node
 build/.workdsh-primary-runtime-cache
 build/official-primary-runtime
+build/.win7

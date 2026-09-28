@@ -41,6 +41,7 @@
     "dist:mac-smoke": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-mac.ts",
     "dist:win": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-win.ts",
     "dist:win-portable": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-win-portable.ts",
+    "dist:win7": "node scripts/package-win7.ts",
     "prepare:workdsh-runtime": "node scripts/prepare-workdsh-runtime.mjs",
     "prepare:workdsh-primary-runtime": "node scripts/prepare-workdsh-primary-runtime.mjs"
   },
