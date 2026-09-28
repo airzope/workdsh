@@ -1,0 +1,4 @@
+# Bilingual-pair consistency record: the git blob hash of each side as of the last
+# confirmed-consistent state. Both languages carry equal authority.
+2026-09-28-windows7-vxkex-compatibility.md: 981a96bab2f03af9bc516e80239e24970efe1c41
+2026-09-28-windows7-vxkex-compatibility.zh.md: 6eb29c3a17f91c7a5f721587cfec9fb92047bbe2

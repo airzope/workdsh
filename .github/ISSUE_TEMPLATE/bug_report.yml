@@ -41,6 +41,7 @@ body:
       options:
         - Windows 11 x64
         - Windows 10 x64
+        - Windows 7 SP1 x64 with VxKex NEXT / Windows 7 SP1 x64（VxKex NEXT）
         - Windows ARM64
         - macOS Apple Silicon
         - macOS Intel

@@ -16,6 +16,8 @@ corepack yarn dev
 
 `dev` 构建外壳、准备固定版本的 Profile 和主运行时，再启动 Electron。它是这里唯一会打开图形应用的命令。无界面验证使用 `corepack yarn check` 和 `corepack yarn check:desktop-dsh-alignment`。`corepack yarn workspace dsh-plugin-desktop package:dir` 生成未压缩应用，并检查其中没有第二套 DSH 依赖。
 
+Windows 7 SP1 x64 借助 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 使用同一个安装包。`build/installer.nsh` 通过 VxKex NEXT 的 `KexCfg.exe` 为 `WorkDSH.exe` 启用它，`src/windows7-compatibility.ts` 在该系统上应用外壳的运行时策略。在真实 Windows 7 机器上启动验证仍是原生验证步骤；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-28-windows7-vxkex-compatibility.zh.md)。
+
 本包不修改上游源码。升级 DSH 时，同时更新子模块固定版本和运行时准备版本；发布前验证 WorkDSH Profile、两个平台的打包检查及最终安装包。默认选择上游最新正式版；预发布版需要明确的产品决定。
 
 外壳源码与打包脚本在本目录。Profile 包的源码和发布属于 WorkDSH 仓库；参见[Desktop 归属约束](../docs/desktop-boundaries.md)。

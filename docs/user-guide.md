@@ -4,7 +4,7 @@
 
 ## 安装与启动
 
-从 [GitHub Releases](https://github.com/techflag/workdsh/releases) 下载含实际安装文件的版本。Windows 使用 x64 Setup 或 Portable；macOS 根据电脑选择 Apple Silicon（arm64）或 Intel（x64）DMG。安装包自带 Electron、Node 和固定版本的 DSH Profile，普通用户无需安装 Node.js 或 Python。
+从 [GitHub Releases](https://github.com/techflag/workdsh/releases) 下载含实际安装文件的版本。Windows 使用 x64 Setup 或 Portable（Windows 7 SP1 x64 需先安装 VxKex NEXT，见[常见问题](faq.md#能在-windows-7-上运行吗)）；macOS 根据电脑选择 Apple Silicon（arm64）或 Intel（x64）DMG。安装包自带 Electron、Node 和固定版本的 DSH Profile，普通用户无需安装 Node.js 或 Python。
 
 启动后，WorkDSH 在本机运行 Profile 中的官方 DSH 服务，并在应用窗口打开本机页面。项目、资料库、专家、技能与连接器由 WorkDSH Profile 提供。窗口关闭会结束 Windows 应用；macOS 遵循系统窗口生命周期。当前外壳不提供旧文档描述的托盘、多 Profile 选择或自动更新面板。
 

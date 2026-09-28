@@ -16,6 +16,8 @@ corepack yarn dev
 
 `dev` builds the carrier, prepares the pinned Profile and primary runtime, then launches Electron. It is the only command here that starts a graphical application. For headless verification use `corepack yarn check` and `corepack yarn check:desktop-dsh-alignment`. `corepack yarn workspace dsh-plugin-desktop package:dir` creates an unpacked application and checks that it contains no duplicate DSH dependency tree.
 
+Windows 7 SP1 x64 uses the same installer through [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT). `build/installer.nsh` enables VxKex NEXT for `WorkDSH.exe` through its `KexCfg.exe`, and `src/windows7-compatibility.ts` applies the carrier's runtime policy there. Launching on a real Windows 7 machine remains a native verification step; see the [Agent Note](../.agents/notes/implemented/architecture/2026-09-28-windows7-vxkex-compatibility.md).
+
 The upstream checkout is read-only from this package. When upgrading DSH, update the submodule pin and runtime preparation version together, then validate the WorkDSH Profile, both platform package checks, and the resulting installers before publishing. Prefer the latest official stable DSH release; pre-releases require an explicit product decision.
 
 The carrier sources and package scripts live in this directory. The Profile package source and its release are owned by the WorkDSH repository; see [Desktop ownership](../docs/desktop-boundaries.md).

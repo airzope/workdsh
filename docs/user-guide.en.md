@@ -4,7 +4,7 @@
 
 ## Install and launch
 
-Download a release with actual installer assets from [GitHub Releases](https://github.com/techflag/workdsh/releases). Use the x64 Setup or Portable package on Windows. On macOS, choose the Apple Silicon (arm64) or Intel (x64) DMG for your computer. The installer includes Electron, Node, and a pinned DSH Profile; ordinary users do not need to install Node.js or Python.
+Download a release with actual installer assets from [GitHub Releases](https://github.com/techflag/workdsh/releases). Use the x64 Setup or Portable package on Windows; Windows 7 SP1 x64 first needs VxKex NEXT (see the [FAQ](faq.en.md#does-it-run-on-windows-7)). On macOS, choose the Apple Silicon (arm64) or Intel (x64) DMG for your computer. The installer includes Electron, Node, and a pinned DSH Profile; ordinary users do not need to install Node.js or Python.
 
 WorkDSH starts the official DSH service from that Profile locally and opens its page in the application window. Projects, library, experts, skills, and connectors come from the WorkDSH Profile. Closing the Windows window exits the application; macOS follows its normal window lifecycle. The current carrier does not include the former tray, multi-Profile selector, or automatic update panel described in older documentation.
 
