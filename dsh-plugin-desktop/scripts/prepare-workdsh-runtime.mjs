@@ -21,6 +21,10 @@ const SKILLHUB_VERSION = '0.2.16'
 const MARKET_PACKAGE = 'dshmarket'
 const MARKET_VERSION = '1.66.1'
 const productPackages = new Set(PRODUCT_PACKAGES)
+// Bound for each pnpm install in the release installer. It only ends a pnpm
+// process that finished but keeps an idle handle; a genuine install of a large
+// plugin on a slow runner and registry can take several minutes.
+const PNPM_EXIT_BOUND_MS = 5 * 60_000
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options })
@@ -97,7 +101,7 @@ async function installReleasedProfile(output) {
   // completed local tarball add. Use the same pinned pnpm directly; the
   // release tarball hash and exact compatibility approval were checked above.
   const profileDir = join(dshHome, 'profiles', profile);
-  const added = ${installSpawn}(corepack, ['--dir', profileDir, 'add', '--save-exact', 'file:../../package-cache/' + item.filename], { stdio: 'inherit', timeout: 90_000, killSignal: 'SIGKILL' });
+  const added = ${installSpawn}(corepack, ['--dir', profileDir, 'add', '--save-exact', 'file:../../package-cache/' + item.filename], { stdio: 'inherit', timeout: ${PNPM_EXIT_BOUND_MS}, killSignal: 'SIGKILL' });
   if (added.error?.code === 'ETIMEDOUT') {
     const installed = join(profileDir, 'node_modules', name, 'package.json');
     const dependency = JSON.parse(readFileSync(join(profileDir, 'package.json'), 'utf8')).dependencies?.[name];
@@ -112,12 +116,12 @@ async function installReleasedProfile(output) {
   // when expected package manifests are present; Profile validation follows.
   installer = replaceRequired(installer,
     `const result = ${installSpawn}(corepack, runtimeArgs, { stdio: 'inherit' });\n  if (result.error) throw result.error;\n  if (result.status !== 0) process.exit(result.status ?? 1);`,
-    `const result = ${installSpawn}(corepack, runtimeArgs, { stdio: 'inherit', timeout: 90_000, killSignal: 'SIGKILL' });\n  if (result.error?.code === 'ETIMEDOUT') {\n    const scope = join(dshHome, 'profiles', profile, 'node_modules', '@deepseek-ai');\n    if (!['dsh', 'dsh-deepseek-account', 'cordis-plugin-group'].every(name => existsSync(join(scope, name, 'package.json')))) throw result.error;\n    console.warn('Pinned pnpm finished the runtime install but did not exit; verified package manifests and continuing.');\n  } else if (result.error) throw result.error;\n  if (result.error?.code !== 'ETIMEDOUT' && result.status !== 0) process.exit(result.status ?? 1);`,
+    `const result = ${installSpawn}(corepack, runtimeArgs, { stdio: 'inherit', timeout: ${PNPM_EXIT_BOUND_MS}, killSignal: 'SIGKILL' });\n  if (result.error?.code === 'ETIMEDOUT') {\n    const scope = join(dshHome, 'profiles', profile, 'node_modules', '@deepseek-ai');\n    if (!['dsh', 'dsh-deepseek-account', 'cordis-plugin-group'].every(name => existsSync(join(scope, name, 'package.json')))) throw result.error;\n    console.warn('Pinned pnpm finished the runtime install but did not exit; verified package manifests and continuing.');\n  } else if (result.error) throw result.error;\n  if (result.error?.code !== 'ETIMEDOUT' && result.status !== 0) process.exit(result.status ?? 1);`,
     'bounded runtime peer installation',
   )
   installer = replaceRequired(installer,
     `const result = ${installSpawn}(corepack, ['--dir', join(dshHome, 'profiles', profile), 'add', '--save-exact', ...missing.values()], { stdio: 'inherit' });\n    if (result.error) throw result.error;\n    if (result.status !== 0) process.exit(result.status ?? 1);`,
-    `const result = ${installSpawn}(corepack, ['--dir', join(dshHome, 'profiles', profile), 'add', '--save-exact', ...missing.values()], { stdio: 'inherit', timeout: 90_000, killSignal: 'SIGKILL' });\n    if (result.error?.code === 'ETIMEDOUT') {\n      if (![...missing.keys()].every(name => existsSync(join(scope, name.slice('@deepseek-ai/'.length), 'package.json')))) throw result.error;\n      console.warn('Pinned pnpm finished the peer install but did not exit; verified package manifests and continuing.');\n    } else if (result.error) throw result.error;\n    if (result.error?.code !== 'ETIMEDOUT' && result.status !== 0) process.exit(result.status ?? 1);`,
+    `const result = ${installSpawn}(corepack, ['--dir', join(dshHome, 'profiles', profile), 'add', '--save-exact', ...missing.values()], { stdio: 'inherit', timeout: ${PNPM_EXIT_BOUND_MS}, killSignal: 'SIGKILL' });\n    if (result.error?.code === 'ETIMEDOUT') {\n      if (![...missing.keys()].every(name => existsSync(join(scope, name.slice('@deepseek-ai/'.length), 'package.json')))) throw result.error;\n      console.warn('Pinned pnpm finished the peer install but did not exit; verified package manifests and continuing.');\n    } else if (result.error) throw result.error;\n    if (result.error?.code !== 'ETIMEDOUT' && result.status !== 0) process.exit(result.status ?? 1);`,
     'bounded official peer closure',
   )
   if (process.platform === 'win32') {
