@@ -59,6 +59,12 @@ function bundledPrimaryRuntime(): string {
   return join(process.resourcesPath, 'workdsh-runtime', 'primary-runtime')
 }
 
+function bundledMediaTools(): string {
+  const overridden = process.env.WORKDSH_MEDIA_TOOLS
+  if (overridden !== undefined && overridden.length > 0) return overridden
+  return join(process.resourcesPath, 'workdsh-runtime', 'media')
+}
+
 function browserWorkerRequest(): { port: number, profile: string } | undefined {
   const portArg = process.argv.find(arg => arg.startsWith('--workdsh-browser-worker-port='))
   if (portArg === undefined) return undefined
@@ -178,6 +184,7 @@ function startRuntime(home: string, profileDir: string): void {
       DSH_BUNDLED_PRIMARY_RUNTIME: bundledPrimaryRuntime(),
       DSH_ELECTRON_EXECUTABLE: process.execPath,
       ...brandEnvironment(brand, BRAND_DIRECTORY),
+      WORKDSH_MEDIA_TOOLS: bundledMediaTools(),
       ELECTRON_RUN_AS_NODE: undefined,
     },
     stdio: ['ignore', 'pipe', 'pipe'],

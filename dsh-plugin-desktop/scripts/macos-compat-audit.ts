@@ -113,6 +113,9 @@ export const MACOS_OFFLINE_FILES = [
   'office-skills/office-pptx/SKILL.md',
   'office-skills/office-xlsx/SKILL.md',
   'office-skills/scripts/check_office.py',
+  'media/manifest.json',
+  'media/bin/ffmpeg',
+  'media/bin/ffprobe',
   'package-cache/release-manifest.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
@@ -173,6 +176,8 @@ export function auditMacApplication(application: string, arch: 'x64' | 'arm64'):
     join('Contents', 'MacOS', executable),
     join('Contents', 'Resources', 'workdsh-runtime', 'primary-runtime', 'dependencies', 'node', 'bin', 'node'),
     join('Contents', 'Resources', 'workdsh-runtime', 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'),
+    join('Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffmpeg'),
+    join('Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffprobe'),
   ])
   const wrongArchitecture: string[] = []
   const otherArchitectures: string[] = []

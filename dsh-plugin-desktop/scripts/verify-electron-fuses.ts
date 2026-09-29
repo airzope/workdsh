@@ -66,6 +66,15 @@ export function smokeBundledWorkdshProfile(context: PackagedRuntimeContext): voi
     throw new Error(`Bundled document engine smoke failed: ${String(documents.error ?? documents.stderr)}`)
   }
   console.log(documents.stdout.trim())
+  const media = spawnSync(node, [
+    fileURLToPath(new URL('./smoke-media.mjs', import.meta.url)),
+    join(runtime, 'media'),
+    join(runtime, 'profiles', 'workdsh', 'node_modules', 'workdsh-plugin-office'),
+  ], { encoding: 'utf8', timeout: 300_000 })
+  if (media.error || media.status !== 0) {
+    throw new Error(`Bundled FFmpeg smoke failed: ${String(media.error ?? media.stderr)}`)
+  }
+  console.log(media.stdout.trim())
 }
 
 /** Injectable official fuse reader used by focused tests. */

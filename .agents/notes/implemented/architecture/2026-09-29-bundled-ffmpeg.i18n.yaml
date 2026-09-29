@@ -1,0 +1,5 @@
+# Bilingual-pair consistency record: the git blob hash of each side as of the last
+# confirmed-consistent state. Both languages carry equal authority. Update both files
+# and re-record their hashes with git hash-object after editing either side.
+2026-09-29-bundled-ffmpeg.md: 37373041a40f65bdc6d0c99a89cf56305bba2e7d
+2026-09-29-bundled-ffmpeg.zh.md: eff5fa93feeacb2f98a907d45bd1cab1485bca90

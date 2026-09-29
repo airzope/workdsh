@@ -33,16 +33,17 @@
     "check:mac-package": "yarn run check",
     "check:linux-package": "yarn run check",
     "start": "node scripts/start-workdsh.mjs",
-    "dev": "yarn run build && yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run start",
-    "package:dir": "yarn run build && yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-dir.mjs",
-    "dist:mac": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/release-mac.ts",
-    "dist:mac-smoke": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-mac.ts",
-    "dist:win": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-win.ts",
-    "dist:win-portable": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-win-portable.ts",
+    "dev": "yarn run build && yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && yarn run start",
+    "package:dir": "yarn run build && yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/package-dir.mjs",
+    "dist:mac": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/release-mac.ts",
+    "dist:mac-smoke": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/package-mac.ts",
+    "dist:win": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/package-win.ts",
+    "dist:win-portable": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/package-win-portable.ts",
     "dist:win7": "node scripts/package-win7.ts",
-    "dist:linux": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && node scripts/package-linux.ts",
+    "dist:linux": "yarn run prepare:workdsh-runtime && yarn run prepare:workdsh-primary-runtime && yarn run prepare:workdsh-media && node scripts/package-linux.ts",
     "prepare:workdsh-runtime": "node scripts/prepare-workdsh-runtime.mjs",
-    "prepare:workdsh-primary-runtime": "node scripts/prepare-workdsh-primary-runtime.mjs"
+    "prepare:workdsh-primary-runtime": "node scripts/prepare-workdsh-primary-runtime.mjs",
+    "prepare:workdsh-media": "node scripts/prepare-workdsh-media.ts"
   },
   "peerDependencies": {
     "electron": "43.3.0"

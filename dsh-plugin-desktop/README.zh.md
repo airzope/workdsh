@@ -22,6 +22,8 @@ Windows 7 SP1 x64 借助 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT)
 
 Ubuntu 包在各自架构上用 `corepack yarn dist:linux` 原生构建，生成 `dist/WorkDSH-<版本>-linux-<amd64|arm64>.deb`。`scripts/linux-glibc-audit.ts` 拒绝任何比 Ubuntu 20.04 所带版本需要更新的 glibc、libstdc++ 或 C++ ABI 的内置 ELF 文件。在此之前，`scripts/linux-sherpa-onnx.ts` 会在 `ubuntu:20.04` 容器中用固定版本的 sherpa-onnx 源码重新编译 x64 的 SenseVoice 语音转文字绑定，因此构建 x64 包需要 Docker 与 Git；CI 会用 `scripts/smoke-ubuntu-deb.sh` 把每个包安装进 `ubuntu:20.04` 与 `ubuntu:24.04` 容器验证；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-ubuntu-deb-packages.zh.md)。
 
+`scripts/prepare-workdsh-media.ts` 把固定版本的静态 FFmpeg 8.1.2 与 FFprobe（Shaka Project `n8.1.2-1`，GPLv3，按目标校验 SHA-256）连同许可文本和 `SOURCES.md` 放到 `build/workdsh-runtime/media/`。载体以 `WORKDSH_MEDIA_TOOLS` 把该目录传给运行时，Office 插件的 `media-ffmpeg` 技能写明可执行文件路径，各平台审计与打包后的运行冒烟都要求它们存在。附带它们的发布必须同时发布对应的源码归档；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-bundled-ffmpeg.zh.md)。
+
 名称、标识与图标来自构建时的品牌目录，默认为 `branding/workdsh/`。`scripts/generate-brand.ts` 把 `WORKDSH_BRAND` 选择的品牌生成到 `build/brand/`（各平台图标、托盘位图、标志与品牌字段）；打包脚本据此追加对应的 electron-builder 覆盖项，并按品牌文件名校验产物，载体再把显示名称和标志传给 Profile。参见[白牌构建](../docs/white-label.md)和 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-build-time-white-label.zh.md)。
 
 本包不修改上游源码。升级 DSH 时，同时更新子模块固定版本和运行时准备版本；发布前验证 WorkDSH Profile、两个平台的打包检查及最终安装包。默认选择上游最新正式版；预发布版需要明确的产品决定。

@@ -82,7 +82,7 @@ const host = await build({
   entryPoints: [fileURLToPath(new URL("src/index.ts", root))],
   bundle: true,
   external: ["@deepseek-ai/*", "exceljs"],
-  loader:{".ttf":"binary"},
+  loader:{".ttf":"binary",".md":"text"},
   plugins: [spreadsheetScope],
   format: "esm",
   define:{__WORKDSH_PRESENTATION_ENABLED__:String(!wordOnly),__WORKDSH_SPREADSHEET_ENABLED__:String(!wordOnly)},

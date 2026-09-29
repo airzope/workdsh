@@ -1,5 +1,6 @@
 ## Unreleased
 
+- 新增内置技能 `media-ffmpeg`：用 FFmpeg/FFprobe 转换、压缩、无损剪辑、合并和查看音视频。技能附带 Desktop 内置 FFmpeg（`WORKDSH_MEDIA_TOOLS`）的绝对路径；Web 部署可用 `WORKDSH_FFMPEG`/`WORKDSH_FFPROBE` 或 PATH 中的 FFmpeg。
 - 导出的 XLSX 与 PDF 的创建者使用白牌产品名称（`WORKDSH_BRAND_NAME`），未设置时仍为 WorkDSH。
 
 ## 0.1.0-alpha.9 — 2026-09-25

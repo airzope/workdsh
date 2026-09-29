@@ -123,6 +123,9 @@ export const LINUX_OFFLINE_FILES = [
   'office-skills/office-pptx/SKILL.md',
   'office-skills/office-xlsx/SKILL.md',
   'office-skills/scripts/check_office.py',
+  'media/manifest.json',
+  'media/bin/ffmpeg',
+  'media/bin/ffprobe',
   'package-cache/release-manifest.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
@@ -169,6 +172,8 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
     executableName,
     'resources/workdsh-runtime/primary-runtime/dependencies/node/bin/node',
     'resources/workdsh-runtime/primary-runtime/dependencies/python/bin/python3',
+    'resources/workdsh-runtime/media/bin/ffmpeg',
+    'resources/workdsh-runtime/media/bin/ffprobe',
   ].filter((path) => {
     const absolute = join(application, path)
     return existsSync(absolute) && readElfVersionNeeds(absolute)?.machine !== expected

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Run every bundled runtime of an installed WorkDSH application headlessly:
 # Electron (as Node), Node.js, Python with the Office libraries, the DSH CLI,
-# the SenseVoice speech-to-text binding, and an offline DOCX-to-PDF conversion
-# through the bundled LibreOffice Kit engine. Electron and Node must run as
+# the SenseVoice speech-to-text binding, an offline DOCX-to-PDF conversion
+# through the bundled LibreOffice Kit engine, and FFmpeg audio and video work. Electron and Node must run as
 # the expected CPU, which catches packages assembled for another architecture.
 # Usage: smoke-bundled-runtime.sh <electron-executable> <workdsh-runtime-directory> <x64|arm64>
 set -euo pipefail
@@ -48,3 +48,4 @@ echo "LibreOffice Kit converted DOCX to PDF ($(wc -c < "$work/sample.pdf" | tr -
 # The Library's AnyDoc conversion and PaddleOCR recognition through its own
 # packaged modules.
 HOME="$work" "$node" "$(dirname "$0")/smoke-document-engines.mjs" "$runtime/profiles/workdsh/node_modules/workdsh-plugin-library"
+HOME="$work" "$node" "$(dirname "$0")/smoke-media.mjs" "$runtime/media" "$runtime/profiles/workdsh/node_modules/workdsh-plugin-office"

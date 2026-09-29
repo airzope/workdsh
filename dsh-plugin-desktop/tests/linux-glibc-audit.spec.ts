@@ -80,6 +80,9 @@ function application(): string {
   write(join(runtime, 'primary-runtime', 'dependencies', 'node', 'bin', 'node'), elf(['GLIBC_2.28', 'GLIBCXX_3.4.21', 'CXXABI_1.3.11']))
   write(join(runtime, 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'), elf(['GLIBC_2.17']))
   write(join(runtime, 'profiles', 'workdsh', 'node_modules', '@firecrawl', 'anydoc-linux-x64-gnu', 'anydoc.linux-x64-gnu.node'), elf(['GLIBC_2.17']))
+  // Static FFmpeg builds need no versioned glibc symbols.
+  write(join(runtime, 'media', 'bin', 'ffmpeg'), elf([]))
+  write(join(runtime, 'media', 'bin', 'ffprobe'), elf([]))
   return root
 }
 
@@ -118,7 +121,7 @@ describe('Linux package audit', () => {
     expect(report.missingOfflineFiles).toEqual([])
     expect(report.wrongArchitecture).toEqual([])
     expect(report.tooNew).toEqual({})
-    expect(report.images).toBe(4)
+    expect(report.images).toBe(6)
     expect(report.newest).toEqual({ GLIBC: '2.28', GLIBCXX: '3.4.21', CXXABI: '1.3.11' })
     expect(report.otherArchitectures).toEqual([join('resources', 'prebuilds', 'linux-arm64', 'addon.node')])
     expect(() => assertLinuxPayload(report)).not.toThrow()
@@ -128,6 +131,7 @@ describe('Linux package audit', () => {
     const root = application()
     write(join(root, 'resources', 'native.node'), elf(['GLIBC_2.34', 'GLIBCXX_3.4.30']))
     write(join(root, 'workdsh'), elf(['GLIBC_2.17'], 183))
+    write(join(root, 'resources', 'workdsh-runtime', 'media', 'bin', 'ffprobe'), elf([], 183))
     rmSync(join(root, 'resources', 'workdsh-runtime', 'office-skills', 'office-xlsx', 'SKILL.md'))
     rmSync(join(root, 'resources', 'workdsh-runtime', 'profiles', 'workdsh', 'node_modules', '@deepseek-ai', 'libreoffice-kit-wasm'), { recursive: true })
 
@@ -137,7 +141,7 @@ describe('Linux package audit', () => {
       'GLIBC_2.34': [join('resources', 'native.node')],
       'GLIBCXX_3.4.30': [join('resources', 'native.node')],
     })
-    expect(report.wrongArchitecture).toEqual(['workdsh'])
+    expect(report.wrongArchitecture).toEqual(['workdsh', 'resources/workdsh-runtime/media/bin/ffprobe'])
     expect(report.missingOfflineFiles).toEqual([
       'office-skills/office-xlsx/SKILL.md',
       'LibreOffice Kit WebAssembly engine (@deepseek-ai/libreoffice-kit-wasm)',

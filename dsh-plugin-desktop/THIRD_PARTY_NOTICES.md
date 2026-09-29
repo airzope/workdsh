@@ -66,5 +66,16 @@ The Ubuntu x64 package replaces one file of the Profile's
 on Ubuntu 20.04, so that it runs with glibc 2.31. It links the package's own
 `libsherpa-onnx-c-api.so`, which is shipped unchanged.
 
+Every installer includes `workdsh-runtime/media/bin/ffmpeg` and `ffprobe`:
+[FFmpeg](https://ffmpeg.org/) 8.1.2 as built by
+[shaka-project/static-ffmpeg-binaries](https://github.com/shaka-project/static-ffmpeg-binaries)
+`n8.1.2-1` (build scripts under the Apache License 2.0), with x264, x265,
+libvpx, SVT-AV1, Opus, LAME and Mbed TLS. The executables are licensed under
+the **GNU General Public License version 3 or later**; WorkDSH runs them as
+separate programs and does not link to them. The same directory contains the
+license text (`COPYING.GPLv3`) and `SOURCES.md`, which lists the exact
+upstream source of every component. A release that ships these executables
+must also publish those source archives next to its installers.
+
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.

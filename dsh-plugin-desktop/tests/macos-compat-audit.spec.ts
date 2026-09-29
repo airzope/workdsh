@@ -87,6 +87,8 @@ function application(arch: keyof typeof CPU = 'x64', minimum = '12.0'): string {
   write(join(runtime, 'primary-runtime', 'dependencies', 'node', 'bin', 'node'), thin(arch, '13.5'))
   write(join(runtime, 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'), universal(['x64', '10.13'], ['arm64', '11.0']))
   write(join(runtime, 'profiles', 'workdsh', 'node_modules', '@firecrawl', `anydoc-darwin-${arch}`, `anydoc.darwin-${arch}.node`), thin(arch, '10.12'))
+  write(join(runtime, 'media', 'bin', 'ffmpeg'), thin(arch, '11.0'))
+  write(join(runtime, 'media', 'bin', 'ffprobe'), thin(arch, '11.0'))
   return root
 }
 
@@ -132,7 +134,7 @@ describe('macOS application audit', () => {
     const report = auditMacApplication(root, 'x64')
 
     expect(report).toMatchObject({
-      images: 5,
+      images: 7,
       minimumSystemVersion: '12.0',
       newest: '13.5.0',
       wrongArchitecture: [],
@@ -151,13 +153,17 @@ describe('macOS application audit', () => {
     const root = application('x64', '26.0')
     platformPackage(root, '@deepseek-ai/libreoffice-kit-darwin-arm64', ['arm64'], thin('arm64', '13.0'))
     write(join(root, 'Contents', 'MacOS', 'WorkDSH'), thin('arm64', '12.0'))
+    write(join(root, 'Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffprobe'), thin('arm64', '11.0'))
     write(join(root, 'Contents', 'Frameworks', 'Helper'), thin('x64', '26.0'))
     rmSync(join(root, 'Contents', 'Resources', 'workdsh-runtime', 'office-skills', 'office-xlsx', 'SKILL.md'))
 
     const report = auditMacApplication(root, 'x64')
 
     expect(report.missingPlatformPackages).toEqual(['@deepseek-ai/libreoffice-kit-darwin-x64 (found arm64)'])
-    expect(report.wrongArchitecture).toEqual([join('Contents', 'MacOS', 'WorkDSH')])
+    expect(report.wrongArchitecture).toEqual([
+      join('Contents', 'MacOS', 'WorkDSH'),
+      join('Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffprobe'),
+    ])
     expect(report.tooNew).toEqual({
       '26.0.0': [join('Contents', 'Frameworks', 'Helper')],
       '26.0': ['Contents/Info.plist (LSMinimumSystemVersion)'],

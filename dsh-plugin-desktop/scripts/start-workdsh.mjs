@@ -25,6 +25,7 @@ const child = spawn(electron, [root], {
     WORKDSH_BUNDLED_PROFILE: profile,
     WORKDSH_NODE_EXECUTABLE: node,
     WORKDSH_PRIMARY_RUNTIME: primary,
+    WORKDSH_MEDIA_TOOLS: join(runtime, 'media'),
   },
   stdio: 'inherit',
   windowsHide: false,

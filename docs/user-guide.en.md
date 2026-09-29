@@ -18,6 +18,15 @@ The library imports Markdown, TXT, HTML, PDF, Word (DOC/DOCX), Excel (XLS/XLSX),
 
 In conversations the AI can also process workspace files directly: `document_to_markdown` converts a document to Markdown, and `document_ocr` recognizes the text of an image or of PDF pages, with a confidence per page. Conversion and recognition run offline, so files never leave the computer.
 
+## Audio and video
+
+The installers bundle FFmpeg and FFprobe. Describe what you need in the conversation, for example "convert meeting.mov to MP4", "compress this video to under 50 MB", "cut 01:10 to 02:30 without re-encoding", "extract the audio as MP3", or "join these three clips". The AI uses the bundled `media-ffmpeg` skill:
+
+- It first inspects duration, codecs, and resolution, then chooses an approach. Results go to a new file next to the original, which is never overwritten.
+- Changing the container, cutting a range, and joining clips with identical parameters copy the audio and video streams, so quality is unchanged and the work is fast. A lossless cut can only start at a keyframe, so it may begin a few seconds before the requested time; when you need frame accuracy, the AI says so and re-encodes instead.
+- Compression defaults to H.264/AAC MP4 for the widest compatibility; you can also compress to a target size, a lower resolution, or H.265.
+- Commands run through the conversation's command tool, under your current permission and sandbox settings. All processing happens offline on your computer.
+
 ## Data and plugins
 
 Runtime data lives in a DSH home under the local application-data directory. The installer contains the pinned Profile dependencies; the Electron carrier does not install a second DSH npm tree into `app.asar`. Models and external tools may access the network according to user configuration.

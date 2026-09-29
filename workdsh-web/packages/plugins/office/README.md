@@ -76,6 +76,10 @@ corepack pnpm preview:install
 八类输出选择均可用，但当前统一内容工具的实时适配仅 Word 工作副本就绪；其余菜单明确显示「实时编辑待接入」，输出意图告知 AI 不得误建为 Word 或假称完成实时编辑。类型和角色经原生 codec 在提交时序列化为模型可见 JSON；这是输入意图，不替代 Host 授权和严格操作校验。文档序列化重新检查访问，切换任务后的旧引用拒绝发送并要求重新选择。多个输出或 target 要求 AI 澄清。
 
 
+## 音视频技能 `media-ffmpeg`
+
+插件注册内置技能 `media-ffmpeg`，指导 AI 用 FFmpeg/FFprobe 转换格式、压缩、无损剪辑（流复制，从关键帧开始）、合并和查看音视频。命令经 DSH 的命令工具运行，因此遵循当前权限与沙箱策略；技能要求先用 FFprobe 查看、输出到原文件旁的新文件（`-n` 拒绝覆盖）并在完成后复核。技能正文末尾附带可执行文件的绝对路径：Desktop 读取 `WORKDSH_MEDIA_TOOLS` 目录中的 `bin/ffmpeg`、`bin/ffprobe` 与 `manifest.json`；Web 部署可设置 `WORKDSH_FFMPEG`/`WORKDSH_FFPROBE`，否则在 PATH 中查找。找不到时，技能要求 AI 告知用户，而不是自行下载。
+
 ## 安装、卸载与内容保留
 
 发布物是独立 `.tgz`：Host入口、Client模块、`cordis.patch.yml`、编辑器资源、版本说明和许可说明都随包交付。安装使用官方 `dsh plugin --profile <名称> add <Office.tgz>`，并显式提供本地身份、授权、审计基础插件及匹配 Harness `0.1.6-alpha.2` Web Profile。已有 WorkDSH Profile 可复用这些治理依赖，不需要装专家、技能管理或工作台插件。Word-only 预览制品见 [GitHub prerelease](https://github.com/techflag/workdsh/releases/tag/office-v0.1.0-alpha.1)；不将其宣称为完整 Office 正式版。
