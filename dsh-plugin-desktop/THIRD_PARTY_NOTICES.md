@@ -74,8 +74,9 @@ libvpx, SVT-AV1, Opus, LAME and Mbed TLS. The executables are licensed under
 the **GNU General Public License version 3 or later**; WorkDSH runs them as
 separate programs and does not link to them. The same directory contains the
 license text (`COPYING.GPLv3`) and `SOURCES.md`, which lists the exact
-upstream source of every component. A release that ships these executables
-must also publish those source archives next to its installers.
+upstream source of every component. Each Desktop release attaches
+`ffmpeg-8.1.2-corresponding-source.tar.gz`, which
+`scripts/pack-ffmpeg-sources.ts` assembles from exactly those sources.
 
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.
