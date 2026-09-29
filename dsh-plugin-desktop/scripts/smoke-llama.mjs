@@ -97,5 +97,11 @@ try {
 } finally {
   stop()
   await new Promise(resolve => setTimeout(resolve, 500))
-  rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 })
+  // Windows may hold the models open briefly after the processes end; a
+  // leftover temporary folder does not fail the smoke.
+  try {
+    rmSync(work, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
+  } catch (error) {
+    console.warn(`Could not remove ${work}: ${String(error)}`)
+  }
 }
