@@ -1,3 +1,7 @@
+## 0.1.0-alpha.11 — 2026-09-29
+
+- 按官方 DSH 0.2.0-rc.1 的公开接口重新打包，精确依赖同步更新。
+
 ## 0.1.0-alpha.10 — 2026-09-29
 
 - 新增内置技能 `media-ffmpeg`：用 FFmpeg/FFprobe 转换、压缩、无损剪辑、合并和查看音视频。技能附带 Desktop 内置 FFmpeg（`WORKDSH_MEDIA_TOOLS`）的绝对路径；Web 部署可用 `WORKDSH_FFMPEG`/`WORKDSH_FFPROBE` 或 PATH 中的 FFmpeg。

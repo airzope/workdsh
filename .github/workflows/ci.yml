@@ -428,7 +428,7 @@ jobs:
 
           - 技能页接入 SkillHub 目录，可查看技能图标、来源、版本与安装入口；本地技能仍可单独管理。
           - 现有插件页可直接发现 DSH 社区插件，并打开第三方 dsh-market 目录进行搜索和安装。
-          - Desktop 使用锁定的官方 DSH 0.1.7-rc.2 Profile；内置 Node.js 和 Python，不额外打包浏览器。
+          - Desktop 使用锁定的官方 DSH 0.2.0-rc.1 Profile；内置 Node.js 和 Python，不额外打包浏览器。
           - 内置 FFmpeg 8.1.2 与 FFprobe（GPLv3，作为独立程序运行）：可在对话中转换、压缩、无损剪辑、合并音视频并提取音频；对应源码见安装目录 media/SOURCES.md 与本版本附带的源码归档。
           - 提供 Windows x64 安装包，以及 macOS Intel x64、Apple Silicon arm64 未签名 DMG（macOS 15 及以上，分别在对应架构的 macOS 15 上构建并验证）。
           - 提供 Ubuntu 20.04 及以上 x64（amd64）与 arm64 的 .deb 安装包，内置 Node.js、Python 与办公技能，并在 Ubuntu 20.04 与 24.04 中安装验证。

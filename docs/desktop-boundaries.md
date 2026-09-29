@@ -11,7 +11,7 @@ The pinned `deepseek-harness` submodule and the DSH version inside the bundled
 Profile are one version boundary. Upgrade to the latest official stable DSH
 release by default, only after the Profile and Desktop compatibility checks
 pass. An explicit pre-release decision may temporarily pin a release candidate.
-The current `0.1.7-rc.2` pin is such a transitional baseline; it is not a
+The current `0.2.0-rc.1` pin is such a transitional baseline; it is not a
 stable-release policy. Do not publish an installer when the version-alignment
 check fails.
 

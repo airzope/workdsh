@@ -1,6 +1,6 @@
 # WorkDSH 专家插件 / Experts plugin
 
-一个插件管理多个专家与专家团配置。当前源码候选为 `workdsh-plugin-experts@0.1.0-alpha.8`，面向 **DeepSeek Harness 0.1.7-rc.2 / Cordis 4.0.3**；本地 Web 升级证据见 [rc.2 记录](../../../docs/DSH-0.1.7-UPGRADE-PLAN.md)，候选代码与已经发布的安装包仍须分别验收。
+一个插件管理多个专家与专家团配置。当前源码候选为 `workdsh-plugin-experts@0.1.0-alpha.8`，面向 **DeepSeek Harness 0.2.0-rc.1 / Cordis 4.0.3**；本地 Web 升级证据见 [0.2.0-rc.1 记录](../../../../docs/evidence/dsh-0.2.0-rc.1-upgrade-2026-09-29.md)，候选代码与已经发布的安装包仍须分别验收。
 
 WorkDSH manages authored expert assets and immutable revisions. Team execution, messaging, tasks and the Web team panel use the official DSH Agent Teams plugins.
 
@@ -63,7 +63,7 @@ corepack pnpm probe:experts:team:real
 
 ## 安装候选包
 
-当前源码依赖 DSH 0.1.7-rc.2，应使用同一次构建产出的配套 tgz；不要把旧 Release 的安装包当作已含本次升级。先在独立 Profile 验证，再部署实际使用的 Profile：
+当前源码依赖 DSH 0.2.0-rc.1，应使用同一次构建产出的配套 tgz；不要把旧 Release 的安装包当作已含本次升级。先在独立 Profile 验证，再部署实际使用的 Profile：
 
 ```sh
 dsh --profile workdsh --from-default-profile web --dump-config

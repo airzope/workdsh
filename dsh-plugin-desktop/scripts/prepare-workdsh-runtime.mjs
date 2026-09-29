@@ -8,7 +8,7 @@ import { DSH_VERSION } from './runtime-version.mjs'
 import { PRODUCT_PACKAGES, RELEASE_PACKAGES } from './workdsh-package-boundary.mjs'
 import { verifyPackageDshReferences, verifyProfileRelease } from './verify-profile-release.mjs'
 
-const WORKDSH_VERSION = '0.1.0-alpha.15'
+const WORKDSH_VERSION = '0.1.0-alpha.16'
 // GitHub repository whose v<version> release holds the published Profile.
 // CI passes the repository it runs in, so a fork installs its own release.
 const RELEASE_REPOSITORY = process.env.WORKDSH_RELEASE_REPOSITORY || 'techflag/workdsh'
@@ -23,7 +23,7 @@ const profileLayout = 'five-product-plugins-skillhub-dshmarket-v1'
 const SKILLHUB_PACKAGE = '@cocofhu/skillhub'
 const SKILLHUB_VERSION = '0.2.16'
 const MARKET_PACKAGE = 'dshmarket'
-const MARKET_VERSION = '1.66.1'
+const MARKET_VERSION = '1.66.5'
 const productPackages = new Set(PRODUCT_PACKAGES)
 // Bound for each pnpm install in the release installer. It only ends a pnpm
 // process that finished but keeps an idle handle; a genuine install of a large

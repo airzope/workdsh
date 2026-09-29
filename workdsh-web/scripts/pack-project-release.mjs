@@ -68,7 +68,7 @@ await writeFile(join(destination, 'release-manifest.json'), JSON.stringify({
   channel: 'github-release',
   sourceCommit,
   sourceDirty,
-  harness: '0.1.7-rc.2',
+  harness: '0.2.0-rc.1',
   node: process.version,
   packageManager: project.packageManager,
   runtimeOverrides: Object.fromEntries(Object.entries(project.pnpm.overrides).filter(([name]) => name.startsWith('@deepseek-ai/'))),

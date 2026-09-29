@@ -1,3 +1,7 @@
+## 0.1.0-alpha.7 — 2026-09-29
+
+- 按官方 DSH 0.2.0-rc.1 的公开接口重新打包，精确依赖同步更新。
+
 ## 0.1.0-alpha.6 — 2026-09-29
 
 - 通过 AnyDoc（`@firecrawl/anydoc`）本地转换 DOC、XLS/XLSX、PPT、ODT/ODS/ODP、RTF、EPUB 和 CSV。
