@@ -8,7 +8,11 @@ import { DSH_VERSION } from './runtime-version.mjs'
 import { PRODUCT_PACKAGES, RELEASE_PACKAGES } from './workdsh-package-boundary.mjs'
 import { verifyPackageDshReferences, verifyProfileRelease } from './verify-profile-release.mjs'
 
-const WORKDSH_VERSION = '0.1.0-alpha.14'
+const WORKDSH_VERSION = '0.1.0-alpha.15'
+// GitHub repository whose v<version> release holds the published Profile.
+// CI passes the repository it runs in, so a fork installs its own release.
+const RELEASE_REPOSITORY = process.env.WORKDSH_RELEASE_REPOSITORY || 'techflag/workdsh'
+if (!/^[\w.-]+\/[\w.-]+$/u.test(RELEASE_REPOSITORY)) throw new Error(`Invalid WORKDSH_RELEASE_REPOSITORY: ${RELEASE_REPOSITORY}`)
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const output = join(desktopRoot, 'build', 'workdsh-runtime')
 const destination = join(output, 'profiles', 'workdsh')
@@ -62,7 +66,7 @@ async function download(url, path) {
 async function installReleasedProfile(output) {
   const releaseDir = join(desktopRoot, 'build', `.workdsh-release-${WORKDSH_VERSION}`)
   mkdirSync(releaseDir, { recursive: true })
-  const base = `https://github.com/techflag/workdsh/releases/download/v${WORKDSH_VERSION}`
+  const base = `https://github.com/${RELEASE_REPOSITORY}/releases/download/v${WORKDSH_VERSION}`
   const localReleaseDir = process.env.WORKDSH_USE_LOCAL_RELEASE === '1'
     ? resolve(desktopRoot, '..', 'workdsh-web', '.artifacts', `project-v${WORKDSH_VERSION}`)
     : undefined

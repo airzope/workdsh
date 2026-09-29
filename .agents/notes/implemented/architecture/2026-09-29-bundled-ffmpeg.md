@@ -49,7 +49,7 @@ The build has no zlib, so it has no PNG encoder; still frames use JPEG.
 
 The executables are GPLv3. WorkDSH runs them as separate programs and does not link them, so its own license is unaffected. The GPL text and `SOURCES.md` ship next to the executables, and THIRD_PARTY_NOTICES records the build.
 
-A release that ships them must publish the corresponding source archives next to its installers. Shaka publishes build scripts but not source archives, so this is a manual release step that is not automated yet.
+Shaka publishes build scripts but not source archives. The CI job `ffmpeg-sources` runs `scripts/pack-ffmpeg-sources.ts`, which fetches every component at its pinned tag or commit and checks the LAME tarball against a pinned SHA-256. It uploads the result as `dsh-plugin-desktop-ffmpeg-sources`, so each Desktop release attaches `ffmpeg-8.1.2-corresponding-source.tar.gz` next to the installers.
 
 ## Upgrades
 

@@ -49,7 +49,7 @@ Status: implemented
 
 这些可执行文件采用 GPLv3。WorkDSH 把它们作为独立程序运行，不与其链接，因此自身许可不受影响。GPL 文本与 `SOURCES.md` 放在可执行文件旁，THIRD_PARTY_NOTICES 也记录了该构建。
 
-附带这些可执行文件的发布，必须在安装包旁同时发布对应的源码归档。Shaka 只公开构建脚本、不托管源码归档，因此这是一个手动发布步骤，尚未自动化。
+Shaka 只公开构建脚本，不托管源码归档。CI 任务 `ffmpeg-sources` 运行 `scripts/pack-ffmpeg-sources.ts`，按固定的标签或提交获取每个组件，并按固定的 SHA-256 校验 LAME 源码包；结果以 `dsh-plugin-desktop-ffmpeg-sources` 上传，因此每个 Desktop 发布都会在安装包旁附带 `ffmpeg-8.1.2-corresponding-source.tar.gz`。
 
 ## Upgrades
 

@@ -28,7 +28,7 @@ export interface MediaRelease {
   /** Encoders only some targets provide, recorded when present. */
   readonly optionalEncoders: readonly string[]
   /** Upstream sources of the build, for the GPL source directions. */
-  readonly sources: readonly { readonly name: string, readonly version: string, readonly url: string }[]
+  readonly sources: readonly { readonly name: string, readonly version: string, readonly url: string, readonly sha256?: string }[]
 }
 
 const SHAKA = 'https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/'
@@ -78,7 +78,7 @@ export const FFMPEG_RELEASE: MediaRelease = {
     { name: 'libvpx', version: 'v1.16.0', url: 'https://chromium.googlesource.com/webm/libvpx' },
     { name: 'SVT-AV1', version: 'v4.1.0', url: 'https://gitlab.com/AOMediaCodec/SVT-AV1' },
     { name: 'Opus', version: 'v1.6.1', url: 'https://github.com/xiph/opus' },
-    { name: 'LAME', version: '3.100', url: 'https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz' },
+    { name: 'LAME', version: '3.100', url: 'https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz/download', sha256: 'ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e' },
     { name: 'Mbed TLS', version: 'v3.4.1', url: 'https://github.com/Mbed-TLS/mbedtls' },
     { name: 'Build scripts', version: '88caac417541f3bb678fa6670cb73f2d74c7aaf9', url: 'https://github.com/shaka-project/static-ffmpeg-binaries' },
   ],
