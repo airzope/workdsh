@@ -52,7 +52,7 @@ export function tinyGguf(name = 'workdsh-smoke') {
     ['general.architecture', TYPE.STRING, 'llama'],
     ['general.name', TYPE.STRING, name],
     ['general.file_type', TYPE.UINT32, 0],
-    ['llama.context_length', TYPE.UINT32, 2048],
+    ['llama.context_length', TYPE.UINT32, 65536],
     ['llama.embedding_length', TYPE.UINT32, embedding],
     ['llama.block_count', TYPE.UINT32, layers],
     ['llama.feed_forward_length', TYPE.UINT32, feedForward],

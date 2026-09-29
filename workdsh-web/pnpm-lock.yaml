@@ -466,6 +466,9 @@ importers:
       '@deepseek-ai/dsh-llm':
         specifier: 0.2.0-rc.1
         version: 0.2.0-rc.1(@deepseek-ai/cordis@4.0.3)
+      '@deepseek-ai/dsh-settings':
+        specifier: 0.2.0-rc.1
+        version: 0.2.0-rc.1(b941e528dac057a214fc4753cceda997)
       '@deepseek-ai/dsh-skill':
         specifier: 0.2.0-rc.1
         version: 0.2.0-rc.1(@deepseek-ai/cordis@4.0.3)(@deepseek-ai/dsh-llm@0.2.0-rc.1(@deepseek-ai/cordis@4.0.3))(@deepseek-ai/dsh-scope@0.2.0-rc.1(@deepseek-ai/cordis@4.0.3)(@deepseek-ai/dsh-invariants@0.2.0-rc.1(@deepseek-ai/cordis@4.0.3)))

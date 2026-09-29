@@ -13,6 +13,10 @@
       "types": "./dist/client/index.d.ts",
       "default": "./dist/client.js"
     },
+    "./local-models": {
+      "types": "./dist/local-models.d.ts",
+      "default": "./dist/local-models.js"
+    },
     ".": {
       "types": "./dist/probe.d.ts",
       "default": "./dist/probe.js"
@@ -68,6 +72,7 @@
     "@deepseek-ai/dsh-client-ui-session": "0.2.0-rc.1",
     "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.1",
     "@deepseek-ai/dsh-llm": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-settings": "0.2.0-rc.1",
     "@deepseek-ai/dsh-tools": "0.2.0-rc.1",
     "@deepseek-ai/dsh-skill": "0.2.0-rc.1",
     "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.1",

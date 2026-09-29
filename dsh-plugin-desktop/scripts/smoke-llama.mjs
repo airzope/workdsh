@@ -36,7 +36,7 @@ writeTinyGguf(join(models, 'workdsh-smoke.gguf'))
 
 let log = ''
 const child = spawn(server, ['--host', '127.0.0.1', '--port', String(port), '--models-dir', models, '--models-max', '1', '--no-webui', '--offline'], {
-  env: { ...process.env, LLAMA_API_KEY: key, LLAMA_CACHE: join(work, 'cache'), LLAMA_ARG_CTX_SIZE: '512' },
+  env: { ...process.env, LLAMA_API_KEY: key, LLAMA_CACHE: join(work, 'cache') },
   stdio: ['ignore', 'pipe', 'pipe'],
   detached: process.platform !== 'win32',
   windowsHide: true,
