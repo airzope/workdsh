@@ -1,0 +1,14 @@
+{
+  "name": "WorkDSH",
+  "fileName": "WorkDSH",
+  "executableName": "workdsh",
+  "appId": "io.techflag.dsh.ssh",
+  "publisher": "WorkDSH contributors",
+  "support": "https://github.com/techflag/workdsh/issues",
+  "summary": "WorkBuddy-style workspace on DeepSeek Harness",
+  "description": "WorkDSH Electron carrier for a pinned DeepSeek Harness runtime Profile",
+  "dataDirectory": "WorkDSH",
+  "logo": "logo.png",
+  "mark": "mark.svg",
+  "color": "#176BFF"
+}

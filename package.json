@@ -39,6 +39,8 @@
     "dist:mac-smoke": "yarn workspace dsh-plugin-desktop dist:mac-smoke",
     "dist:win": "yarn workspace dsh-plugin-desktop dist:win",
     "dist:win-portable": "yarn workspace dsh-plugin-desktop dist:win-portable",
+    "dist:win7": "yarn workspace dsh-plugin-desktop dist:win7",
+    "dist:linux": "yarn workspace dsh-plugin-desktop dist:linux",
     "release:pack": "node scripts/package-desktop-release.mjs --source=local",
     "release:pack:published": "node scripts/package-desktop-release.mjs --source=published",
     "upstream:version": "cd deepseek-harness && corepack pnpm --version",

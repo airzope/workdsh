@@ -4,9 +4,28 @@
 
 ## 安装与启动
 
-从 [GitHub Releases](https://github.com/techflag/workdsh/releases) 下载含实际安装文件的版本。Windows 使用 x64 Setup 或 Portable；macOS 根据电脑选择 Apple Silicon（arm64）或 Intel（x64）DMG。安装包自带 Electron、Node 和固定版本的 DSH Profile，普通用户无需安装 Node.js 或 Python。
+从 [GitHub Releases](https://github.com/techflag/workdsh/releases) 下载含实际安装文件的版本。Windows 使用 x64 Setup 或 Portable（Windows 7 SP1 x64 使用 win7 离线安装包，见[常见问题](faq.md#能在-windows-7-上运行吗)）；macOS 根据电脑选择 Apple Silicon（arm64）或 Intel（x64）DMG；Ubuntu 20.04 及以上选择 amd64 或 arm64 的 `.deb` 包（见[常见问题](faq.md#如何在-ubuntu-上安装)）。安装包自带 Electron、Node 和固定版本的 DSH Profile，普通用户无需安装 Node.js 或 Python。
 
-启动后，WorkDSH 在本机运行 Profile 中的官方 DSH 服务，并在应用窗口打开本机页面。项目、资料库、专家、技能与连接器由 WorkDSH Profile 提供。窗口关闭会结束 Windows 应用；macOS 遵循系统窗口生命周期。当前外壳不提供旧文档描述的托盘、多 Profile 选择或自动更新面板。
+启动后，WorkDSH 在本机运行 Profile 中的官方 DSH 服务，并在应用窗口打开本机页面。项目、资料库、专家、技能与连接器由 WorkDSH Profile 提供。窗口关闭会结束 Windows 与 Linux 上的应用；macOS 遵循系统窗口生命周期。当前外壳不提供旧文档描述的托盘、多 Profile 选择或自动更新面板。
+
+## 文档转换与文字识别
+
+资料库可导入 Markdown、TXT、HTML、PDF、Word（DOC/DOCX）、Excel（XLS/XLSX）、PowerPoint（PPT/PPTX）、OpenDocument、RTF、EPUB、CSV 和图片（PNG/JPEG/BMP/GIF/WebP/TIFF），并生成可搜索、可在对话中引用的文本。
+
+- Office、OpenDocument、RTF、EPUB 与 CSV 由 AnyDoc 在本机转换。
+- 图片和扫描版 PDF 中没有文字层的页面由 PaddleOCR（PP-OCRv5 移动版）在本机识别。每个 PDF 最多识别 100 页；打开这类资料时可在原件与识别文本之间切换。
+- 识别结果可能有误，请核对关键数字和专有名词。
+
+对话中也可以让 AI 直接处理工作区文件：`document_to_markdown` 把文档转换为 Markdown，`document_ocr` 逐页识别图片或 PDF 并给出置信度。所有转换与识别都离线进行，文件不会离开本机。
+
+## 音视频处理
+
+安装包内置 FFmpeg 与 FFprobe。在对话中直接说明需求即可，例如“把 会议.mov 转成 MP4”“把这个视频压缩到 50 MB 以内”“截取 01:10 到 02:30，不要重新编码”“提取音频为 MP3”“合并这三段视频”。AI 会使用内置的 `media-ffmpeg` 技能：
+
+- 先查看时长、编码和分辨率，再选择做法；结果写入原文件旁的新文件，不会覆盖原件。
+- 只换封装、截取片段和合并同规格片段时直接复制音视频流，不损失画质，速度也快。无损剪辑只能从关键帧开始，起点可能比指定时间早几秒；需要精确到帧时，AI 会说明并改为重新编码。
+- 压缩默认使用 H.264/AAC 的 MP4，兼容性最好；也可按目标大小、分辨率或 H.265 压缩。
+- 命令通过对话中的命令工具运行，受当前权限与沙箱设置约束。处理全部在本机离线完成。
 
 ## 数据与插件
 

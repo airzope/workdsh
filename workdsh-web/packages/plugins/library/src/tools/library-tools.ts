@@ -11,7 +11,7 @@ export function registerLibraryTools(ctx: Context): void {
   ctx.tools.register(defineTool({
     name: 'library_search',
     description: '搜索本次对话已显式选择的虚拟资料正文。资料不位于工作区文件系统；无需也不得先用 Bash、Glob 或文件读取工具定位。返回固定资料与修订引用；不自动扩大读取范围。',
-    parameters: { query: { type: 'string', required: true, description: '要查找的标题或正文关键词。' }, kind: { type: 'string', enum: ['markdown', 'text', 'pdf', 'docx', 'pptx', 'html'] }, source: { type: 'string', enum: ['upload', 'task', 'created'] } },
+    parameters: { query: { type: 'string', required: true, description: '要查找的标题或正文关键词。' }, kind: { type: 'string', enum: ['markdown', 'text', 'pdf', 'docx', 'pptx', 'html', 'doc', 'xls', 'xlsx', 'ppt', 'odt', 'ods', 'odp', 'rtf', 'epub', 'csv', 'image'] }, source: { type: 'string', enum: ['upload', 'task', 'created'] } },
     output: {
       schema: {
         type: 'object', additionalProperties: false,

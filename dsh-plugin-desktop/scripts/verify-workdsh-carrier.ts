@@ -17,6 +17,30 @@ export function normalizeAsarEntry(entry: string): string {
   return entry.replaceAll('\\', '/').replace(/^\//u, '')
 }
 
+/**
+ * Problems with the packaged brand. The carrier reads brand.json and the window
+ * icon from the archive; the runtime, a separate Node.js process, reads the
+ * mark from the unpacked copy.
+ * @param entries - Normalized archive entries.
+ * @param brand - Parsed build/brand/brand.json, if packaged.
+ * @param isUnpacked - Whether an archive-relative path exists in app.asar.unpacked.
+ * @returns Human-readable problems; empty when the brand is complete.
+ */
+export function packagedBrandProblems(
+  entries: readonly string[],
+  brand: { readonly mark?: unknown } | undefined,
+  isUnpacked: (path: string) => boolean,
+): string[] {
+  const problems = ['build/brand/brand.json', 'build/brand/app-icon.png']
+    .filter(path => !entries.includes(path))
+    .map(path => `missing ${path}`)
+  if (brand === undefined) return problems
+  if (typeof brand.mark !== 'string' || !/^mark\.(?:svg|png)$/u.test(brand.mark)) return [...problems, 'brand.json names no mark']
+  const mark = `build/brand/${brand.mark}`
+  if (!isUnpacked(mark)) problems.push(`${mark} is not unpacked for the runtime`)
+  return problems
+}
+
 export async function afterPack(context: PackContext): Promise<void> {
   const resources = context.electronPlatformName === 'darwin'
     ? join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`, 'Contents', 'Resources')
@@ -25,6 +49,11 @@ export async function afterPack(context: PackContext): Promise<void> {
   if (!existsSync(archive)) throw new Error(`Missing Electron carrier: ${archive}`)
   const entries = listPackage(archive, { isPack: false }).map(normalizeAsarEntry)
   if (!entries.includes('lib/workdsh-main.js')) throw new Error('Electron carrier has no WorkDSH entry point')
+  const brand = entries.includes('build/brand/brand.json')
+    ? JSON.parse(extractFile(archive, join('build', 'brand', 'brand.json')).toString('utf8')) as { mark?: unknown }
+    : undefined
+  const brandProblems = packagedBrandProblems(entries, brand, path => existsSync(join(resources, 'app.asar.unpacked', ...path.split('/'))))
+  if (brandProblems.length > 0) throw new Error(`Electron carrier brand is incomplete: ${brandProblems.join('; ')}`)
   if (entries.some(entry => entry.startsWith('node_modules/'))) {
     throw new Error('Electron carrier contains duplicate node_modules; Harness must come only from the bundled Profile')
   }

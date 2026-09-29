@@ -4,6 +4,7 @@ import { closeSync, openSync, readFileSync, readSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DSH_VERSION } from './runtime-version.mjs'
+import { builtBrand } from './brand.ts'
 
 /** Verify a complete in-memory Windows PE image. */
 export function assertPortableExecutableBuffer(data: Buffer, label: string, source: string): void {
@@ -89,11 +90,12 @@ export function verifyWindowsInstaller(
   options: WindowsInstallerVerificationOptions = defaultOptions(),
 ): WindowsInstallerArtifacts {
   const distDir = join(options.desktopRoot, 'dist')
+  const { fileName } = builtBrand(options.desktopRoot)
   const installerPath = join(
     distDir,
-    `WorkDSH-${options.version}-x64-Setup.exe`,
+    `${fileName}-${options.version}-x64-Setup.exe`,
   )
-  const applicationPath = join(distDir, 'win-unpacked', 'WorkDSH.exe')
+  const applicationPath = join(distDir, 'win-unpacked', `${fileName}.exe`)
 
   assertPortableExecutable(installerPath, 'Windows NSIS installer')
   assertPortableExecutable(applicationPath, 'unpacked Windows application')

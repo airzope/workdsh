@@ -10,7 +10,7 @@ The repository-owned iOS Default icon fills its complete 1024 by 1024 canvas. El
 
 ## Decision
 
-`build/app-icon.png` remains the source of record and the Windows and Linux application icon. The headless build runs `scripts/generate-mac-app-icon.mjs`, which validates the 1024 by 1024 RGBA16 source and its ICC profile, resizes the complete artwork to 824 by 824 pixels, centers it on a transparent 1024 by 1024 canvas, and preserves its 16-bit Display P3 color data in `build/app-icon-mac.png`. The generator rejects an output path that would overwrite its source.
+The brand logo remains the source of record and the Windows and Linux application icon; for WorkDSH it is `branding/workdsh/logo.png`, copied unchanged to `build/brand/app-icon.png`. The headless build runs `scripts/generate-brand.ts`, which resizes the complete artwork to 824 by 824 pixels, centers it on a transparent 1024 by 1024 canvas, and writes `build/brand/app-icon-mac.png` as RGBA16 with the logo's ICC profile, so WorkDSH keeps its 16-bit Display P3 color data. A white-label logo may be any square PNG of at least 512 pixels; see the [white-label note](2026-09-29-build-time-white-label.md).
 
 The macOS Electron Builder configuration uses the generated asset. The Host shell selects the same generated path on Darwin before passing its specification to the native runtime, so the installed icon, development Dock icon, and window icon use one platform decision. Windows and Linux continue to use the unchanged source asset. Both files are published and required in the physical packaged runtime so a missing generated asset fails before release.
 

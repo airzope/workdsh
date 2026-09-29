@@ -63,10 +63,13 @@ The planned desktop installer release is **2.0.6-alpha.1**. Its download links w
 | Platform | Download |
 | --- | --- |
 | Windows x64 | [WorkDSH Setup.exe](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.1-x64-Setup.exe) |
+| Windows 7 SP1 x64 (offline) | [WorkDSH win7 Offline-Setup.exe](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.1-win7-x64-Offline-Setup.exe) |
+| Ubuntu 20.04+ x64 (amd64) | [WorkDSH amd64.deb](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.1-linux-amd64.deb) |
+| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.1-linux-arm64.deb) |
 | macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.1-arm64.dmg) |
 | macOS Intel | [WorkDSH x64.dmg](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.1-x64.dmg) |
 
-Desktop installers include Node.js and Python runtimes by default, so users do not need to install them separately. This is an **Alpha release**: end-to-end project document references, expert execution, and different Office formats are still being validated. The macOS DMGs are unsigned; download updates from [Releases](https://github.com/techflag/workdsh/releases). Start with the [user guide](docs/user-guide.en.md) and [FAQ](docs/faq.en.md).
+Desktop installers include Node.js and Python runtimes by default, so users do not need to install them separately. Windows 7 SP1 x64 is supported on a best-effort basis: its offline installer also installs [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) and the Microsoft VC++ runtime when they are missing ([details](docs/faq.en.md#does-it-run-on-windows-7)). On Ubuntu, install with `sudo apt install ./WorkDSH-<version>-linux-<arch>.deb` ([details](docs/faq.en.md#how-do-i-install-it-on-ubuntu)). This is an **Alpha release**: end-to-end project document references, expert execution, and different Office formats are still being validated. The macOS DMGs support macOS 15 and later and are unsigned ([first launch](docs/faq.en.md#how-do-i-install-it-on-macos)); download updates from [Releases](https://github.com/techflag/workdsh/releases). Start with the [user guide](docs/user-guide.en.md) and [FAQ](docs/faq.en.md).
 
 ## Development and documentation
 

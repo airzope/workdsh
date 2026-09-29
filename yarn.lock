@@ -1773,6 +1773,8 @@ __metadata:
     builder-util: "npm:26.15.3"
     electron: "npm:43.3.0"
     electron-builder: "npm:26.15.7"
+    node-addon-api: "npm:8.9.2"
+    node-api-headers: "npm:1.9.0"
     sharp: "npm:0.35.3"
     tsdown: "npm:0.22.2"
     typescript: "npm:6.0.3"
@@ -2846,6 +2848,22 @@ __metadata:
   dependencies:
     semver: "npm:^7.6.3"
   checksum: 10c0/e582193c9ba7457fb97bffa271dddcc89bf5b893179e18468e23e89e9218352df3b5456d244f5b08d46896302e927723da391fd14cb15b4154825434205e89f8
+  languageName: node
+  linkType: hard
+
+"node-addon-api@npm:8.9.2":
+  version: 8.9.2
+  resolution: "node-addon-api@npm:8.9.2"
+  dependencies:
+    node-gyp: "npm:latest"
+  checksum: 10c0/5cf5231e0da22b22862e6b593982a0e390ca89d022a9ac666c83deceecf20378cb8afe47c456ac1a58a9f62ef60099c950aec05814a287fdfd751d9d154fb12d
+  languageName: node
+  linkType: hard
+
+"node-api-headers@npm:1.9.0":
+  version: 1.9.0
+  resolution: "node-api-headers@npm:1.9.0"
+  checksum: 10c0/7702eb5218c25ff7cc96b4e342815b3bfe940cbd81f233015799e37dad4f34d34db68aa10945a5243b0c8d074f70fb88d90a553a088a52434c2343e532d50dc2
   languageName: node
   linkType: hard
 

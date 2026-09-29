@@ -10,7 +10,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-session/client';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client';
 import * as workbench from 'workdsh-plugin-workbench';
-import { BrandMark, BrandName, DiagnosticsMark } from '../components/Brand.js';
+import { BrandMark, BrandName, DiagnosticsMark, loadBrand } from '../components/Brand.js';
 import { DiagnosticsPanel, type Inventory } from '../components/DiagnosticsPanel.js';
 import { NavigationLocation } from '../components/NavigationLocation.js';
 import { AgentBrowserPage, agentBrowserKind, readAgentBrowserFrame } from '../components/AgentBrowserPage.js';
@@ -103,6 +103,7 @@ export function apply(ctx: Context): void {
   // system preference; the workbench must not pin a theme or veto theme/change.
   ctx.plugin(workbench);
   ctx.slots.inject('sidebar.brand.name', () => ctx.slots.register({ name: 'sidebar.brand.name', priority: -10 }, BrandName));
+  void loadBrand().then(brand => { document.title = brand.name; });
   ctx.slots.inject('sidebar.brand.mark', () => ctx.slots.register({ name: 'sidebar.brand.mark', priority: -10 }, BrandMark));
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'workdsh-location', inject: () => ({ panelToView, selectView }),

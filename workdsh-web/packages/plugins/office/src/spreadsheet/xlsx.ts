@@ -2,9 +2,10 @@ import ExcelJS from "exceljs";
 import type {OfficeSpreadsheetSnapshot} from "workdsh-contracts/office";
 import {spreadsheetStateSchema} from "./model.js";
 import {parse} from "../content/model.js";
+import {documentCreator} from "../content/brand.js";
 export async function spreadsheetXlsx(snapshot:OfficeSpreadsheetSnapshot){
  const state=parse(spreadsheetStateSchema,snapshot.state),workbook=new ExcelJS.Workbook();
- workbook.creator="WorkDSH";workbook.created=new Date("2000-01-01T00:00:00Z");workbook.modified=new Date("2000-01-01T00:00:00Z");
+ workbook.creator=documentCreator();workbook.created=new Date("2000-01-01T00:00:00Z");workbook.modified=new Date("2000-01-01T00:00:00Z");
  workbook.calcProperties.fullCalcOnLoad=true;
  for(const id of state.sheetOrder){const sheet=state.sheets[id]!,target=workbook.addWorksheet(sheet.name);for(const [address,cell] of Object.entries(sheet.cells))target.getCell(address).value=cell.formula?{formula:cell.formula.slice(1)}:cell.value??null;}
  return new Uint8Array(await workbook.xlsx.writeBuffer());

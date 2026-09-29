@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { brandBuilderOverrides, builtBrand } from './brand.ts'
 import { electronBuilderEnvironment } from './electron-builder-environment.ts'
 import { withoutWindowsSigningSecrets } from './package-win.ts'
 import { withoutMacReleaseSecrets } from './release-preflight.ts'
@@ -59,6 +60,7 @@ export function packageDirectory(options = {}) {
       electronBuilderCli,
       ...UNSIGNED_DIRECTORY_BUILD_ARGS,
       ...(existsSync(configuredElectronDist) ? [`--config.electronDist=${configuredElectronDist}`] : []),
+      ...brandBuilderOverrides(builtBrand(options.cwd ?? packageRoot)),
     ],
     {
       cwd: options.cwd ?? packageRoot,

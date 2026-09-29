@@ -25,5 +25,57 @@ The SkillHub catalog and API are maintained separately by
 used by dshmarket is maintained by
 [`awesome-dsh-plugin`](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin).
 
+The Windows 7 x64 offline installer additionally carries two unmodified
+installers, which it runs only on Windows 7 when the component is missing or
+older:
+
+- [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 1.2.3.2463
+  (`KexSetup_Release_1_2_3_2463.exe`, SHA-256
+  `757fb01cf38daa38c6e2db542169554117c533921e5edc119a567bfbe18566af`). The
+  upstream repository publishes no license; redistributing it relies on
+  permission from its authors, which the WorkDSH maintainers are responsible
+  for holding. VxKex NEXT contains DLLs taken from newer Windows releases and
+  remains subject to its authors' and Microsoft's terms.
+- The Microsoft Visual C++ 2015-2022 Redistributable (x64) 14.44.35211
+  (`VC_redist.x64.exe`, SHA-256
+  `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`),
+  distributed under the Microsoft Software License Terms for Visual Studio.
+
+The Library plugin in every package converts documents and recognizes text
+offline with:
+
+- [AnyDoc](https://github.com/firecrawl/anydoc) (`@firecrawl/anydoc` 0.2.4 and
+  its per-platform native package), MIT License. Only local conversion is used;
+  its hosted OCR option is never enabled.
+- The PP-OCRv5 mobile text detection and recognition models and dictionary from
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR), Apache License 2.0,
+  as converted to ONNX by [eSearch-OCR](https://github.com/xushengfeng/eSearch-OCR)
+  (Apache License 2.0), pinned by SHA-256.
+- [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.30.0 (its Node
+  entry and one WebAssembly build) and `onnxruntime-common`, MIT License.
+- [utif2](https://github.com/photopea/UTIF.js) for TIFF images, MIT License.
+
+The Library's `resources/ocr/NOTICE.md` records the exact files.
+
+The Ubuntu x64 package replaces one file of the Profile's
+[`sherpa-onnx-linux-x64`](https://www.npmjs.com/package/sherpa-onnx-linux-x64)
+1.13.8 package, which DSH uses for local SenseVoice speech-to-text:
+`sherpa-onnx.node` is compiled from the unmodified sources of
+[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) at commit
+`11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf` (tag `v1.13.8`, Apache License 2.0)
+on Ubuntu 20.04, so that it runs with glibc 2.31. It links the package's own
+`libsherpa-onnx-c-api.so`, which is shipped unchanged.
+
+Every installer includes `workdsh-runtime/media/bin/ffmpeg` and `ffprobe`:
+[FFmpeg](https://ffmpeg.org/) 8.1.2 as built by
+[shaka-project/static-ffmpeg-binaries](https://github.com/shaka-project/static-ffmpeg-binaries)
+`n8.1.2-1` (build scripts under the Apache License 2.0), with x264, x265,
+libvpx, SVT-AV1, Opus, LAME and Mbed TLS. The executables are licensed under
+the **GNU General Public License version 3 or later**; WorkDSH runs them as
+separate programs and does not link to them. The same directory contains the
+license text (`COPYING.GPLv3`) and `SOURCES.md`, which lists the exact
+upstream source of every component. A release that ships these executables
+must also publish those source archives next to its installers.
+
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.

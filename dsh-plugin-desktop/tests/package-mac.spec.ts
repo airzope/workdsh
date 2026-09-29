@@ -11,7 +11,7 @@ interface CommandCall {
   readonly env: NodeJS.ProcessEnv
 }
 
-function options(calls: CommandCall[], logs: string[] = []): MacSmokePackageOptions {
+function options(calls: CommandCall[], logs: string[] = [], audits: string[] = []): MacSmokePackageOptions {
   return {
     env: {
       PATH: '/usr/bin:/bin',
@@ -37,6 +37,9 @@ function options(calls: CommandCall[], logs: string[] = []): MacSmokePackageOpti
     resetOutput: () => undefined,
     builderCli: '/repo/node_modules/electron-builder/cli.js',
     verifier: '/repo/dsh-plugin-desktop/scripts/verify-mac-smoke.ts',
+    audit: (outputDir, arch) => {
+      audits.push(`${outputDir} ${arch}`)
+    },
     nodeExecutable: '/usr/local/bin/node',
     run: (command, args, cwd, env) => {
       calls.push({ command, args: [...args], cwd, env: { ...env } })
@@ -95,16 +98,27 @@ describe('macOS DMG smoke packaging', () => {
     ])
   })
 
-  it('builds and verifies Intel independently when selected by CI', () => {
+  it('builds, audits and verifies Intel on an Intel host', () => {
     const calls: CommandCall[] = []
-    const base = options(calls)
+    const audits: string[] = []
+    const base = options(calls, [], audits)
     packageMacSmoke({
       ...base,
+      arch: 'x64',
       env: { ...base.env, WORKDSH_MAC_ARCH: 'x64' },
     })
     expect(calls[1]?.args).toContain('--x64')
     expect(calls[1]?.args).not.toContain('--universal')
+    expect(audits).toEqual(['/repo/dsh-plugin-desktop/dist/mac-smoke x64'])
     expect(calls[2]?.args.at(-1)).toBe('x64')
+  })
+
+  it('refuses to package another CPU, whose Profile packages would not match', () => {
+    const calls: CommandCall[] = []
+    const base = options(calls)
+    expect(() => packageMacSmoke({ ...base, env: { ...base.env, WORKDSH_MAC_ARCH: 'x64' } }))
+      .toThrow(/must be built by x64 Node; this Node is arm64/u)
+    expect(calls).toEqual([])
   })
 
   it('reuses a completed CI package gate when explicitly requested', () => {

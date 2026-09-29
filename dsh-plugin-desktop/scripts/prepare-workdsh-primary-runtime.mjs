@@ -10,8 +10,10 @@ const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const upstreamRoot = resolve(desktopRoot, '..', 'deepseek-harness')
 const target = process.platform === 'win32' ? 'win-x64'
   : process.platform === 'darwin' ? `mac-${process.env.WORKDSH_MAC_ARCH ?? process.arch}`
-    : undefined
-if (target === undefined || !['win-x64', 'mac-arm64', 'mac-x64'].includes(target)) {
+    // Linux packages are built natively per architecture; the runtime executes during preparation.
+    : process.platform === 'linux' ? `linux-${process.arch}`
+      : undefined
+if (target === undefined || !['win-x64', 'mac-arm64', 'mac-x64', 'linux-x64', 'linux-arm64'].includes(target)) {
   throw new Error(`Unsupported WorkDSH primary runtime target: ${target ?? process.platform}`)
 }
 const output = join(desktopRoot, 'build', 'workdsh-runtime')
@@ -38,7 +40,7 @@ if (!existsSync(manifestPath) || !existsSync(join(output, 'office-skills'))) {
 }
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 if (manifest.desktopVersion !== DSH_VERSION || manifest.platform !== process.platform
-  || manifest.arch !== target.slice(4)) {
+  || manifest.arch !== target.slice(target.indexOf('-') + 1)) {
   throw new Error(`Official primary runtime metadata does not match ${target} / ${DSH_VERSION}`)
 }
 const profile = join(output, 'profiles', 'workdsh')

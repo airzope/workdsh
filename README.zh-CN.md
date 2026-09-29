@@ -63,10 +63,13 @@ WorkDSH 接入两个独立维护的目录：[SkillHub](https://skillhub.cn/) 提
 | 平台 | 下载 |
 | --- | --- |
 | Windows x64 | [WorkDSH Setup.exe](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.1-x64-Setup.exe) |
+| Windows 7 SP1 x64（离线） | [WorkDSH win7 Offline-Setup.exe](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.1-win7-x64-Offline-Setup.exe) |
+| Ubuntu 20.04+ x64（amd64） | [WorkDSH amd64.deb](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.1-linux-amd64.deb) |
+| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.1-linux-arm64.deb) |
 | macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.1-arm64.dmg) |
 | macOS Intel | [WorkDSH x64.dmg](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.1-x64.dmg) |
 
-Desktop 安装包默认内置 Node.js 和 Python 运行时，普通用户无需单独安装。当前为 **Alpha 版**：项目资料引用、专家执行及不同 Office 格式的端到端体验仍在验收中。macOS DMG 未签名；更新请从 [Releases](https://github.com/techflag/workdsh/releases) 下载。开始使用前请阅读[用户指南](docs/user-guide.md)和[常见问题](docs/faq.md)。
+Desktop 安装包默认内置 Node.js 和 Python 运行时，普通用户无需单独安装。Windows 7 SP1 x64 为尽力支持：其离线安装包会在缺失时一并安装 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 与 Microsoft VC++ 运行库（[说明](docs/faq.md#能在-windows-7-上运行吗)）。Ubuntu 使用 `sudo apt install ./WorkDSH-<版本>-linux-<架构>.deb` 安装（[说明](docs/faq.md#如何在-ubuntu-上安装)）。当前为 **Alpha 版**：项目资料引用、专家执行及不同 Office 格式的端到端体验仍在验收中。macOS DMG 支持 macOS 15 及以上，未签名（首次打开见[说明](docs/faq.md#如何在-macos-上安装)）；更新请从 [Releases](https://github.com/techflag/workdsh/releases) 下载。开始使用前请阅读[用户指南](docs/user-guide.md)和[常见问题](docs/faq.md)。
 
 ## 开发与文档
 

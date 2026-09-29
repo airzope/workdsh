@@ -8,7 +8,37 @@
 
 ## 支持哪些平台？
 
-以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64，以及分别提供的 macOS arm64、x64 版本；没有 Universal 或 Linux 安装包。
+以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64、分别提供的 macOS arm64 与 x64 版本（macOS 15 及以上），以及 Ubuntu 20.04 及以上的 x64（amd64）与 arm64 `.deb` 包；没有 macOS Universal 包。Windows 7 SP1 x64 需借助 VxKex NEXT 运行，见下一节。
+
+## 能在 Windows 7 上运行吗？
+
+Windows 7 SP1 x64 借助第三方兼容层 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT)（[Gitee 镜像](https://gitee.com/YuZhouRen86/VxKex-NEXT)）运行，属于尽力支持：Electron、Node.js 和 Python 的官方发行版均已不支持 Windows 7。
+
+请使用 **Windows 7 x64 离线安装包**（`WorkDSH-<版本>-win7-x64-Offline-Setup.exe`），安装过程无需联网：
+
+1. 安装包与标准版内容相同：Electron（同时承担内置浏览器）、Node.js 24、Python 3.12（含 python-docx、python-pptx、openpyxl、XlsxWriter、numpy、pandas、Pillow、lxml）、Word/PowerPoint/Excel 办公技能、用于渲染与 PDF 转换的 LibreOffice Kit 引擎，以及 DSH Profile。
+2. 在 Windows 7 上，它额外内置 VxKex NEXT 1.2.3.2463 与 Microsoft VC++ 2015-2022 x64 运行库，仅在缺失或版本较旧时静默安装；两者都需要管理员权限，会出现 UAC 提示。随后通过 VxKex NEXT 的 `KexCfg.exe` 为 `WorkDSH.exe` 启用 VxKex NEXT，并保持子进程继承。升级保留该配置，卸载时移除。
+3. 安装结束时会检查 Service Pack 1、KB2533623、KB2670838 与 Windows Management Framework 5.1（PowerShell 5.1，DSH 的命令执行工具需要它）。这些是 Windows 系统更新，安装包不能代为分发；缺失时会列出并提示从 Microsoft 获取。
+4. WorkDSH 在 Windows 7 上为内置 Node.js 设置 `NODE_SKIP_PLATFORM_CHECK=1`，并关闭 GPU 硬件加速。
+
+标准 Windows x64 Setup 也能在 Windows 7 上安装，但需要事先装好 VxKex NEXT 和 VC++ 运行库。Portable ZIP 不经过安装程序：解压后右键单击 `WorkDSH.exe`，在“属性”>“VxKex”中勾选“为此程序启用 VxKex NEXT”，不要勾选“为子进程禁用 VxKex NEXT”。如果在 VxKex NEXT 中启用了强版本伪装导致 WorkDSH 识别不到 Windows 7，可设置环境变量 `WORKDSH_WINDOWS7_COMPAT=1`。Windows 8/8.1 与 32 位 Windows 不在支持范围内；在 Windows 7 上报告问题时请注明 VxKex NEXT 版本。
+
+## 如何在 Ubuntu 上安装？
+
+下载与 CPU 对应的包（x64 选 `amd64`，ARM 选 `arm64`），执行 `sudo apt install ./WorkDSH-<版本>-linux-<架构>.deb`，然后从应用菜单或 `workdsh` 命令启动。支持 Ubuntu 20.04、22.04、24.04；其他 glibc 2.31 及以上的 Debian 系发行版属于尽力支持。
+
+- 包内含 Electron、Node.js 24、Python 3.12（含 Office 相关库）、办公技能、LibreOffice Kit 的 WebAssembly 引擎与 DSH Profile，无需联网即可安装和使用这些组件。
+- 每个包都在对应架构上原生构建，并在全新的 Ubuntu 20.04 与 24.04 容器中安装验证：运行 Electron、Node.js、Python 与 DSH CLI，并把 Word 文档离线转换为 PDF。
+- 本地 SenseVoice 语音转文字同样支持 Ubuntu 20.04。上游 sherpa-onnx 1.13.8 的 x64 绑定需要 glibc 2.32，因此 x64 包内的绑定改为在 Ubuntu 20.04 上从同一版本源码重新编译。
+- 包推荐安装 `fonts-noto-cjk`，以便中文文档正确渲染；使用 `--no-install-recommends` 安装时请自行补装中文字体。
+- Ubuntu 24.04 默认限制非特权用户命名空间；安装脚本会为 WorkDSH 写入 AppArmor 配置，旧系统则按需为 `chrome-sandbox` 设置 SUID。
+
+## 如何在 macOS 上安装？
+
+Apple 芯片选 `arm64.dmg`，Intel 芯片选 `x64.dmg`，支持 macOS 15 及以上。打开 DMG，把应用拖到“应用程序”。
+
+- DMG 未签名。macOS 15 首次打开时会提示无法验证开发者：点“完成”，然后在“系统设置”>“隐私与安全性”底部点“仍要打开”，并用密码确认。之后可正常打开。
+- 两个架构分别在对应芯片的 macOS 15 上原生构建。打包时逐个检查内置文件的 CPU 架构，并要求所需系统版本不高于 macOS 15；然后在 macOS 15 上运行 Electron、Node.js、Python、DSH CLI、语音识别组件，并把 Word 文档离线转换为 PDF。
 
 ## 需要自己安装 Node.js、Python 或 DSH 吗？
 

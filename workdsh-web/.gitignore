@@ -23,3 +23,4 @@ packages/plugins/office/src/presentation/native-react/native.css
 
 # Locally generated task deliverables
 /output/
+packages/plugins/library/resources/ocr/

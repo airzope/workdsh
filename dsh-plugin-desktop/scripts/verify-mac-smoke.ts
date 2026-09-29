@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmdirSync, statSync
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { builtBrand } from './brand.ts'
 import { DSH_VERSION } from './runtime-version.mjs'
 
 /** Injectable filesystem and command boundaries for smoke verification. */
@@ -55,7 +56,7 @@ function defaultOptions(): MacSmokeVerificationOptions {
       ? join(packageRoot, 'dist', 'mac-smoke')
       : resolve(process.argv[2]),
     targetArch: process.argv[3] === 'x64' ? 'x64' : 'arm64',
-    productName: 'WorkDSH',
+    productName: builtBrand(packageRoot).fileName,
     listDmgs,
     makeMountPoint: () => mkdtempSync(join(tmpdir(), 'dsh-desktop-dmg-smoke-')),
     run,

@@ -8,7 +8,37 @@ No. WorkDSH is an independent community project built on [DeepSeek Harness](http
 
 ## Which platforms are supported?
 
-Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64 and separate macOS arm64 and x64 packages. There is no Universal or Linux installer.
+Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64, separate macOS arm64 and x64 packages for macOS 15 and later, and Ubuntu 20.04+ x64 (amd64) and arm64 `.deb` packages. There is no macOS Universal package. Windows 7 SP1 x64 runs through VxKex NEXT; see the next section.
+
+## Does it run on Windows 7?
+
+Windows 7 SP1 x64 is supported on a best-effort basis through the third-party compatibility layer [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) ([Gitee mirror](https://gitee.com/YuZhouRen86/VxKex-NEXT)). Official Electron, Node.js, and Python releases no longer support Windows 7.
+
+Use the **Windows 7 x64 offline installer** (`WorkDSH-<version>-win7-x64-Offline-Setup.exe`); installation needs no network:
+
+1. It contains everything the standard package does: Electron (which also serves as the built-in browser), Node.js 24, Python 3.12 with python-docx, python-pptx, openpyxl, XlsxWriter, numpy, pandas, Pillow, and lxml, the Word/PowerPoint/Excel Office skills, the LibreOffice Kit engine for rendering and PDF conversion, and the DSH Profile.
+2. On Windows 7 it also carries VxKex NEXT 1.2.3.2463 and the Microsoft VC++ 2015-2022 x64 runtime, and installs each silently only when it is missing or older. Both need administrator rights, so UAC prompts appear. It then uses VxKex NEXT's `KexCfg.exe` to enable VxKex NEXT for `WorkDSH.exe`, keeping it inherited by child processes. Upgrades keep this setting; uninstalling removes it.
+3. At the end, setup checks for Service Pack 1, KB2533623, KB2670838, and Windows Management Framework 5.1 (PowerShell 5.1, which DSH's command tool needs). These are Windows updates that the installer cannot redistribute; any that are missing are listed with a prompt to get them from Microsoft.
+4. On Windows 7, WorkDSH sets `NODE_SKIP_PLATFORM_CHECK=1` for its bundled Node.js and turns off GPU hardware acceleration.
+
+The standard Windows x64 Setup also installs on Windows 7, but only after VxKex NEXT and the VC++ runtime are already present. The Portable ZIP bypasses the installer: after extracting it, right-click `WorkDSH.exe`, open Properties > VxKex, check "Enable VxKex NEXT for this program", and leave "Disable VxKex NEXT for child processes" unchecked. If strong version spoofing in VxKex NEXT hides Windows 7 from WorkDSH, set the environment variable `WORKDSH_WINDOWS7_COMPAT=1`. Windows 8/8.1 and 32-bit Windows are not supported. When reporting a Windows 7 problem, include the VxKex NEXT version.
+
+## How do I install it on Ubuntu?
+
+Download the package for your CPU (`amd64` for x64, `arm64` for ARM), run `sudo apt install ./WorkDSH-<version>-linux-<arch>.deb`, then start WorkDSH from the application menu or with the `workdsh` command. Ubuntu 20.04, 22.04, and 24.04 are supported; other Debian-based distributions with glibc 2.31 or newer are best effort.
+
+- The package contains Electron, Node.js 24, Python 3.12 with its Office libraries, the Office skills, the LibreOffice Kit WebAssembly engine, and the DSH Profile, so these components install and work without a network.
+- Each package is built natively for its architecture and installed into fresh Ubuntu 20.04 and 24.04 containers, where Electron, Node.js, Python, and the DSH CLI run and a Word document is converted to PDF offline.
+- Local SenseVoice speech-to-text also works on Ubuntu 20.04. Upstream's sherpa-onnx 1.13.8 x64 binding needs glibc 2.32, so the x64 package carries that binding recompiled from the same release's sources on Ubuntu 20.04.
+- The package recommends `fonts-noto-cjk` so Chinese documents render correctly; add Chinese fonts yourself when installing with `--no-install-recommends`.
+- Ubuntu 24.04 restricts unprivileged user namespaces by default; the install script adds an AppArmor profile for WorkDSH, and older systems get a SUID `chrome-sandbox` when needed.
+
+## How do I install it on macOS?
+
+Download `arm64.dmg` for Apple silicon or `x64.dmg` for Intel; macOS 15 and later are supported. Open the DMG and drag the app to Applications.
+
+- The DMG is unsigned. On first launch macOS 15 reports that it cannot verify the developer: click Done, open System Settings > Privacy & Security, click Open Anyway at the bottom, and confirm with your password. Later launches open normally.
+- Each architecture is built natively on macOS 15 with its own CPU. Packaging checks the CPU architecture of every bundled file and rejects any that needs a newer system than macOS 15. The package then runs Electron, Node.js, Python, the DSH CLI, and the speech-recognition component on macOS 15, and converts a Word document to PDF offline.
 
 ## Must I install Node.js, Python, or DSH myself?
 

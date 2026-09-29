@@ -13,7 +13,9 @@ import { libraryDomainSpec, stateKey, type LibraryState } from '../storage/domai
 
 declare module '@deepseek-ai/cordis' { interface Context { workdshLibrary: LibraryService; workdshIdentity: IdentityService; } }
 
-const MAX_BYTES = 50 * 1024 * 1024;
+/** Largest original a Library import or document tool reads. */
+export const LIBRARY_MAX_BYTES = 50 * 1024 * 1024;
+const MAX_BYTES = LIBRARY_MAX_BYTES;
 const MAX_TOTAL_BYTES = 5 * 1024 * 1024 * 1024;
 const MAX_SELECTION_BYTES = 32 * 1024 * 1024;
 const sha256 = (value: Uint8Array | string): string => createHash('sha256').update(value).digest('hex');
@@ -29,14 +31,26 @@ const cleanName = (value: string): string => {
   if (!name || name.length > 256 || name === '.' || name === '..' || /[\/\\\u0000-\u001f]/.test(name)) throw new Error('library/invalid-name');
   return name;
 };
-const extensionKinds: Readonly<Record<string, LibraryAssetKind>> = {
+/** File extensions the Library converts, and the kind each becomes. */
+export const LIBRARY_EXTENSION_KINDS: Readonly<Record<string, LibraryAssetKind>> = {
   '.md': 'markdown', '.markdown': 'markdown', '.txt': 'text', '.pdf': 'pdf', '.docx': 'docx', '.pptx': 'pptx', '.html': 'html', '.htm': 'html',
+  '.doc': 'doc', '.xls': 'xls', '.xlsx': 'xlsx', '.xlsm': 'xlsx', '.ppt': 'ppt', '.odt': 'odt', '.ods': 'ods', '.odp': 'odp',
+  '.rtf': 'rtf', '.epub': 'epub', '.csv': 'csv',
+  '.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.bmp': 'image', '.gif': 'image', '.webp': 'image', '.tif': 'image', '.tiff': 'image',
 };
 const defaultMediaTypes: Readonly<Record<LibraryAssetKind, string>> = {
   markdown: 'text/markdown', text: 'text/plain', pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   html: 'text/html',
+  doc: 'application/msword', xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ppt: 'application/vnd.ms-powerpoint',
+  odt: 'application/vnd.oasis.opendocument.text', ods: 'application/vnd.oasis.opendocument.spreadsheet',
+  odp: 'application/vnd.oasis.opendocument.presentation', rtf: 'application/rtf', epub: 'application/epub+zip', csv: 'text/csv',
+  image: 'application/octet-stream',
+};
+const imageMediaTypes: Readonly<Record<string, string>> = {
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.bmp': 'image/bmp', '.gif': 'image/gif', '.webp': 'image/webp', '.tif': 'image/tiff', '.tiff': 'image/tiff',
 };
 
 export interface LibraryManagerOptions { readonly root?: string; readonly maxBytes?: number; readonly maxTotalBytes?: number; readonly maxSelectionBytes?: number; readonly maxSelectionAssets?: number; readonly converter?: typeof convertToMarkdown; }
@@ -94,32 +108,43 @@ export class LibraryManager extends Service implements LibraryService {
     });
   }
 
-  importAsset(actor: ActorContext, input: LibraryImportInput, signal?: AbortSignal): Promise<LibraryTreeEntry> {
-    return this.enqueue(async () => {
-      const state = await this.ensureState(actor, signal);
+  async importAsset(actor: ActorContext, input: LibraryImportInput, signal?: AbortSignal): Promise<LibraryTreeEntry> {
+    const inputSha256 = sha256(`${input.parentId ?? ''}\u0000${input.name}\u0000${sha256(input.bytes)}`);
+    // Conversion can take minutes (OCR of scanned pages), so it runs outside the
+    // serial queue: the queue checks before converting and commits afterwards.
+    const check = (state: LibraryState): LibraryTreeEntry | undefined => {
       const prior = state.receipts[input.operationId];
-      const inputSha256 = sha256(`${input.parentId ?? ''}\u0000${input.name}\u0000${sha256(input.bytes)}`);
       if (prior) { if (prior.inputSha256 && prior.inputSha256 !== inputSha256) throw new Error('library/operation-conflict'); return this.entry(state, this.requireNode(state, prior.nodeId)); }
       const name = cleanName(input.name); this.assertFolder(state, input.parentId); this.assertUniqueName(state, input.parentId, name);
       if (!input.operationId.trim() || input.operationId.length > 256) throw new Error('library/invalid-operation');
       if (!input.bytes.byteLength || input.bytes.byteLength > this.maxBytes) throw new Error('library/file-size');
       if (Object.values(state.revisions).reduce((total, revision) => total + revision.originalByteLength, 0) + input.bytes.byteLength > this.maxTotalBytes) throw new Error('library/quota-exceeded');
-      signal?.throwIfAborted();
-      const kind = extensionKinds[extname(name).toLowerCase()];
-      if (!kind) throw new Error('library/unsupported-format');
-      // PDF.js transfers/detaches its input buffer. Keep the authoritative original
-      // and the caller-owned buffer intact by converting an independent copy.
-      const originalBytes = Uint8Array.from(input.bytes);
-      let converted: ConversionResult; let conversionStatus: LibraryRevision['conversionStatus'] = 'ready';
-      try { converted = await this.converter(kind, Uint8Array.from(originalBytes), signal); }
-      catch (cause) {
-        if (signal?.aborted || (cause instanceof Error && cause.message.startsWith('library/'))) throw cause;
-        conversionStatus = 'failed'; converted = { markdown: '', locations: [], warnings: [`转换失败：${cause instanceof Error ? cause.message : '未知转换错误'}`] };
-      }
+      if (!LIBRARY_EXTENSION_KINDS[extname(name).toLowerCase()]) throw new Error('library/unsupported-format');
+      return undefined;
+    };
+    const existing = await this.enqueue(async () => check(await this.ensureState(actor, signal)));
+    if (existing) return existing;
+    signal?.throwIfAborted();
+    const name = cleanName(input.name);
+    const extension = extname(name).toLowerCase();
+    const kind = LIBRARY_EXTENSION_KINDS[extension]!;
+    // PDF.js transfers/detaches its input buffer. Keep the authoritative original
+    // and the caller-owned buffer intact by converting an independent copy.
+    const originalBytes = Uint8Array.from(input.bytes);
+    let converted: ConversionResult; let conversionStatus: LibraryRevision['conversionStatus'] = 'ready';
+    try { converted = await this.converter(kind, Uint8Array.from(originalBytes), signal); }
+    catch (cause) {
+      if (signal?.aborted || (cause instanceof Error && cause.message.startsWith('library/') && !cause.message.startsWith('library/ocr-failed'))) throw cause;
+      conversionStatus = 'failed'; converted = { markdown: '', locations: [], warnings: [`转换失败：${cause instanceof Error ? cause.message : '未知转换错误'}`] };
+    }
+    return this.enqueue(async () => {
+      const state = await this.ensureState(actor, signal);
+      const repeated = check(state);
+      if (repeated) return repeated;
       const timestamp = now(); const assetId = randomUUID(); const nodeId = randomUUID(); const revisionId = randomUUID();
       const relativeBase = join('objects', assetId, revisionId); const finalDirectory = this.safePath(relativeBase);
       const temporaryDirectory = this.safePath(join('.tmp', randomUUID()));
-      const originalName = `original${extname(name).toLowerCase()}`;
+      const originalName = `original${extension}`;
       const originalRelativePath = join(relativeBase, originalName); const contentRelativePath = join(relativeBase, 'content.md');
       await mkdir(temporaryDirectory, { recursive: false, mode: 0o700 });
       try {
@@ -131,7 +156,7 @@ export class LibraryManager extends Service implements LibraryService {
       } catch (cause) { await rm(temporaryDirectory, { recursive: true, force: true }); throw cause; }
       const owner = this.owner(actor);
       const node: LibraryNode = { id: nodeId, spaceId: state.space.id, ...(input.parentId ? { parentId: input.parentId } : {}), kind: 'asset', name, assetId, createdAt: timestamp, updatedAt: timestamp };
-      const asset: LibraryState['assets'][string] = { id: assetId, spaceId: state.space.id, nodeId, kind, mediaType: input.mediaType?.trim() || defaultMediaTypes[kind], byteLength: input.bytes.byteLength, owner, status: 'active', currentRevisionId: revisionId, source: input.source ?? 'upload', ...(input.sourceTaskId ? { sourceTaskId: input.sourceTaskId } : {}), createdAt: timestamp, updatedAt: timestamp };
+      const asset: LibraryState['assets'][string] = { id: assetId, spaceId: state.space.id, nodeId, kind, mediaType: input.mediaType?.trim() || imageMediaTypes[extension] || defaultMediaTypes[kind], byteLength: input.bytes.byteLength, owner, status: 'active', currentRevisionId: revisionId, source: input.source ?? 'upload', ...(input.sourceTaskId ? { sourceTaskId: input.sourceTaskId } : {}), createdAt: timestamp, updatedAt: timestamp };
       const revision: LibraryState['revisions'][string] = { id: revisionId, assetId, number: 1, originalSha256: sha256(originalBytes), contentSha256: sha256(converted.markdown), originalByteLength: originalBytes.byteLength, originalRelativePath, contentRelativePath, conversionStatus, conversionWarnings: [...converted.warnings], createdBy: actor.principalId, createdAt: timestamp };
       const next: LibraryState = { ...state, space: { ...state.space, updatedAt: timestamp }, nodes: { ...state.nodes, [nodeId]: node }, assets: { ...state.assets, [assetId]: asset }, revisions: { ...state.revisions, [revisionId]: revision }, receipts: { ...state.receipts, [input.operationId]: { operationId: input.operationId, assetId, revisionId, nodeId, inputSha256 } } };
       try { await this.states().put(this.key(actor), next); }

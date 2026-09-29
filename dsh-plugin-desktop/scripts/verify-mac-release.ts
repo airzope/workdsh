@@ -5,6 +5,7 @@ import { mkdtempSync, readdirSync, rmdirSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { builtBrand } from './brand.ts'
 
 /** Injectable filesystem and command boundaries for release verification. */
 export interface MacReleaseVerificationOptions {
@@ -46,7 +47,7 @@ function defaultOptions(): MacReleaseVerificationOptions {
       ? join(packageRoot, 'dist', 'mac-release')
       : resolve(process.argv[2]),
     targetArch: process.argv[3] === 'x64' ? 'x64' : 'arm64',
-    productName: 'WorkDSH',
+    productName: builtBrand(packageRoot).fileName,
     listDmgs,
     makeMountPoint: () => mkdtempSync(join(tmpdir(), 'dsh-desktop-dmg-')),
     run,
