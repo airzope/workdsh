@@ -50,7 +50,7 @@ export async function afterPack(context: PackContext): Promise<void> {
   const entries = listPackage(archive, { isPack: false }).map(normalizeAsarEntry)
   if (!entries.includes('lib/workdsh-main.js')) throw new Error('Electron carrier has no WorkDSH entry point')
   const brand = entries.includes('build/brand/brand.json')
-    ? JSON.parse(extractFile(archive, 'build/brand/brand.json').toString('utf8')) as { mark?: unknown }
+    ? JSON.parse(extractFile(archive, join('build', 'brand', 'brand.json')).toString('utf8')) as { mark?: unknown }
     : undefined
   const brandProblems = packagedBrandProblems(entries, brand, path => existsSync(join(resources, 'app.asar.unpacked', ...path.split('/'))))
   if (brandProblems.length > 0) throw new Error(`Electron carrier brand is incomplete: ${brandProblems.join('; ')}`)
