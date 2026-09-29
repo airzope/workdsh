@@ -8,7 +8,7 @@ No. WorkDSH is an independent community project built on [DeepSeek Harness](http
 
 ## Which platforms are supported?
 
-Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64 and separate macOS arm64 and x64 packages. There is no Universal or Linux installer. Windows 7 SP1 x64 runs through VxKex NEXT; see the next section.
+Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64, separate macOS arm64 and x64 packages, and Ubuntu 20.04+ x64 (amd64) and arm64 `.deb` packages. There is no macOS Universal package. Windows 7 SP1 x64 runs through VxKex NEXT; see the next section.
 
 ## Does it run on Windows 7?
 
@@ -22,6 +22,15 @@ Use the **Windows 7 x64 offline installer** (`WorkDSH-<version>-win7-x64-Offline
 4. On Windows 7, WorkDSH sets `NODE_SKIP_PLATFORM_CHECK=1` for its bundled Node.js and turns off GPU hardware acceleration.
 
 The standard Windows x64 Setup also installs on Windows 7, but only after VxKex NEXT and the VC++ runtime are already present. The Portable ZIP bypasses the installer: after extracting it, right-click `WorkDSH.exe`, open Properties > VxKex, check "Enable VxKex NEXT for this program", and leave "Disable VxKex NEXT for child processes" unchecked. If strong version spoofing in VxKex NEXT hides Windows 7 from WorkDSH, set the environment variable `WORKDSH_WINDOWS7_COMPAT=1`. Windows 8/8.1 and 32-bit Windows are not supported. When reporting a Windows 7 problem, include the VxKex NEXT version.
+
+## How do I install it on Ubuntu?
+
+Download the package for your CPU (`amd64` for x64, `arm64` for ARM), run `sudo apt install ./WorkDSH-<version>-linux-<arch>.deb`, then start WorkDSH from the application menu or with the `workdsh` command. Ubuntu 20.04, 22.04, and 24.04 are supported; other Debian-based distributions with glibc 2.31 or newer are best effort.
+
+- The package contains Electron, Node.js 24, Python 3.12 with its Office libraries, the Office skills, the LibreOffice Kit WebAssembly engine, and the DSH Profile, so these components install and work without a network.
+- Each package is built natively for its architecture and installed into fresh Ubuntu 20.04 and 24.04 containers, where Electron, Node.js, Python, and the DSH CLI run and a Word document is converted to PDF offline.
+- The package recommends `fonts-noto-cjk` so Chinese documents render correctly; add Chinese fonts yourself when installing with `--no-install-recommends`.
+- Ubuntu 24.04 restricts unprivileged user namespaces by default; the install script adds an AppArmor profile for WorkDSH, and older systems get a SUID `chrome-sandbox` when needed.
 
 ## Must I install Node.js, Python, or DSH myself?
 

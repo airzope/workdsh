@@ -8,7 +8,7 @@
 
 ## 支持哪些平台？
 
-以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64，以及分别提供的 macOS arm64、x64 版本；没有 Universal 或 Linux 安装包。Windows 7 SP1 x64 需借助 VxKex NEXT 运行，见下一节。
+以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64、分别提供的 macOS arm64 与 x64 版本，以及 Ubuntu 20.04 及以上的 x64（amd64）与 arm64 `.deb` 包；没有 macOS Universal 包。Windows 7 SP1 x64 需借助 VxKex NEXT 运行，见下一节。
 
 ## 能在 Windows 7 上运行吗？
 
@@ -22,6 +22,15 @@ Windows 7 SP1 x64 借助第三方兼容层 [VxKex NEXT](https://github.com/YuZho
 4. WorkDSH 在 Windows 7 上为内置 Node.js 设置 `NODE_SKIP_PLATFORM_CHECK=1`，并关闭 GPU 硬件加速。
 
 标准 Windows x64 Setup 也能在 Windows 7 上安装，但需要事先装好 VxKex NEXT 和 VC++ 运行库。Portable ZIP 不经过安装程序：解压后右键单击 `WorkDSH.exe`，在“属性”>“VxKex”中勾选“为此程序启用 VxKex NEXT”，不要勾选“为子进程禁用 VxKex NEXT”。如果在 VxKex NEXT 中启用了强版本伪装导致 WorkDSH 识别不到 Windows 7，可设置环境变量 `WORKDSH_WINDOWS7_COMPAT=1`。Windows 8/8.1 与 32 位 Windows 不在支持范围内；在 Windows 7 上报告问题时请注明 VxKex NEXT 版本。
+
+## 如何在 Ubuntu 上安装？
+
+下载与 CPU 对应的包（x64 选 `amd64`，ARM 选 `arm64`），执行 `sudo apt install ./WorkDSH-<版本>-linux-<架构>.deb`，然后从应用菜单或 `workdsh` 命令启动。支持 Ubuntu 20.04、22.04、24.04；其他 glibc 2.31 及以上的 Debian 系发行版属于尽力支持。
+
+- 包内含 Electron、Node.js 24、Python 3.12（含 Office 相关库）、办公技能、LibreOffice Kit 的 WebAssembly 引擎与 DSH Profile，无需联网即可安装和使用这些组件。
+- 每个包都在对应架构上原生构建，并在全新的 Ubuntu 20.04 与 24.04 容器中安装验证：运行 Electron、Node.js、Python 与 DSH CLI，并把 Word 文档离线转换为 PDF。
+- 包推荐安装 `fonts-noto-cjk`，以便中文文档正确渲染；使用 `--no-install-recommends` 安装时请自行补装中文字体。
+- Ubuntu 24.04 默认限制非特权用户命名空间；安装脚本会为 WorkDSH 写入 AppArmor 配置，旧系统则按需为 `chrome-sandbox` 设置 SUID。
 
 ## 需要自己安装 Node.js、Python 或 DSH 吗？
 

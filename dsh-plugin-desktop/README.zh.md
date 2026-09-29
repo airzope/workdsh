@@ -18,6 +18,8 @@ corepack yarn dev
 
 Windows 7 SP1 x64 借助 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 运行。`build/installer.nsh` 通过 VxKex NEXT 的 `KexCfg.exe` 为 `WorkDSH.exe` 启用它，`src/windows7-compatibility.ts` 在该系统上应用外壳的运行时策略。标准 Windows 包完成后，`corepack yarn dist:win7` 会针对 Windows 7 审计 `dist/win-unpacked`，准备固定版本的 VxKex NEXT 安装程序和支持 Windows 7 的 Microsoft VC++ 可再发行组件包，并把同一应用封装为 `dist/win7/WorkDSH-<版本>-win7-x64-Offline-Setup.exe`；发布脚本在 Windows 上会执行它。在真实 Windows 7 机器上启动验证仍是原生验证步骤；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-28-windows7-vxkex-compatibility.zh.md)。
 
+Ubuntu 包在各自架构上用 `corepack yarn dist:linux` 原生构建，生成 `dist/WorkDSH-<版本>-linux-<amd64|arm64>.deb`。`scripts/linux-glibc-audit.ts` 拒绝任何比 Ubuntu 20.04 所带版本需要更新的 glibc、libstdc++ 或 C++ ABI 的内置 ELF 文件；CI 会用 `scripts/smoke-ubuntu-deb.sh` 把每个包安装进 `ubuntu:20.04` 与 `ubuntu:24.04` 容器验证；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-ubuntu-deb-packages.zh.md)。
+
 本包不修改上游源码。升级 DSH 时，同时更新子模块固定版本和运行时准备版本；发布前验证 WorkDSH Profile、两个平台的打包检查及最终安装包。默认选择上游最新正式版；预发布版需要明确的产品决定。
 
 外壳源码与打包脚本在本目录。Profile 包的源码和发布属于 WorkDSH 仓库；参见[Desktop 归属约束](../docs/desktop-boundaries.md)。
