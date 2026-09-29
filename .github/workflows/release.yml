@@ -1,0 +1,84 @@
+name: Release
+
+# Publishes the Web Profile and then the Desktop installers for the versions
+# on the default branch head: it creates v<Web version> and runs the Web
+# release on it, waits for that release, then creates desktop-v<Desktop
+# version> and runs CI's tag build, which publishes the installers. Tags that
+# GITHUB_TOKEN creates start no workflows, so this job dispatches them.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The Desktop tag build runs every platform package.
+    timeout-minutes: 300
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the default branch head
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$(git rev-parse "origin/$DEFAULT_BRANCH")" = "$GITHUB_SHA"
+      - name: Read the release versions
+        id: versions
+        run: |
+          echo "web=v$(node -p "require('./workdsh-web/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "desktop=desktop-v$(node -p "require('./dsh-plugin-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Publish the Web release, then the Desktop release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEB_TAG: ${{ steps.versions.outputs.web }}
+          DESKTOP_TAG: ${{ steps.versions.outputs.desktop }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release() {
+            local tag=$1 workflow=$2
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "$tag is already released"
+              return
+            fi
+            if existing=$(gh api "repos/$GITHUB_REPOSITORY/commits/refs/tags/$tag" --jq .sha 2>/dev/null); then
+              if [ "$existing" != "$GITHUB_SHA" ]; then
+                echo "::error::$tag already points at $existing, not $GITHUB_SHA"
+                exit 1
+              fi
+            else
+              gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" >/dev/null
+            fi
+            local since
+            since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref "$tag"
+            local run=""
+            for _ in $(seq 1 30); do
+              run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" --event workflow_dispatch --branch "$tag" \
+                --json databaseId,createdAt --jq "map(select(.createdAt >= \"$since\")) | .[0].databaseId // empty")
+              [ -n "$run" ] && break
+              sleep 10
+            done
+            if [ -z "$run" ]; then
+              echo "::error::The $workflow run for $tag did not start"
+              exit 1
+            fi
+            echo "Waiting for $workflow run $run ($tag)"
+            gh run watch "$run" --repo "$GITHUB_REPOSITORY" --exit-status --interval 60 >/dev/null
+            gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,assets --jq '"\(.tagName): \(.assets | length) assets"'
+          }
+          # Desktop tag builds install the published Web Profile of the same version.
+          release "$WEB_TAG" web-release.yml
+          release "$DESKTOP_TAG" ci.yml

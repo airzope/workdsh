@@ -2,10 +2,12 @@ name: Web release
 
 # Publishes the WorkDSH Web and plugin Profile (v<version>) that Desktop tag
 # builds install. Push the v<version> tag on the default branch before the
-# matching desktop-v<version> tag.
+# matching desktop-v<version> tag, or run the Release workflow, which creates
+# both tags and dispatches this workflow on the first.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -26,6 +26,10 @@ Ubuntu 包在各自架构上用 `corepack yarn dist:linux` 原生构建，生成
 
 名称、标识与图标来自构建时的品牌目录，默认为 `branding/workdsh/`。`scripts/generate-brand.ts` 把 `WORKDSH_BRAND` 选择的品牌生成到 `build/brand/`（各平台图标、托盘位图、标志与品牌字段）；打包脚本据此追加对应的 electron-builder 覆盖项，并按品牌文件名校验产物，载体再把显示名称和标志传给 Profile。参见[白牌构建](../docs/white-label.md)和 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-build-time-white-label.zh.md)。
 
+`scripts/prepare-workdsh-llama.ts` 把 llama.cpp `b11247` 的 `llama-server` 放到 `build/workdsh-runtime/llama/`：Windows（Vulkan 构建，旁附 VC++ 运行库 DLL）与 macOS 使用官方归档；Ubuntu 使用 `scripts/build-llama-linux.sh` 在 `ubuntu:20.04` 中从同一提交构建的版本，因此构建 Linux 包需要 Docker。`src/llama.ts` 以路由模式在回环端口上运行它，服务 `<userData>/models`，每次启动使用新的密钥；Profile 中的 `workdsh-bundle/local-models` 把该文件夹中的每个 GGUF 文件变成一个本地模型；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-bundled-llama-cpp.zh.md)。
+
+发布只来自默认分支：手动运行的 `Release` 工作流在分支最新提交上创建 `v<Web 版本>` 并运行 Web 发布，随后创建 `desktop-v<Desktop 版本>` 并运行 CI 的标签构建，由它发布安装包、`SHA256SUMS` 与 FFmpeg 源码归档。
+
 本包不修改上游源码。升级 DSH 时，同时更新子模块固定版本和运行时准备版本；发布前验证 WorkDSH Profile、两个平台的打包检查及最终安装包。默认选择上游最新正式版；预发布版需要明确的产品决定。
 
 外壳源码与打包脚本在本目录。Profile 包的源码和发布属于 WorkDSH 仓库；参见[Desktop 归属约束](../docs/desktop-boundaries.md)。
