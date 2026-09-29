@@ -14,9 +14,10 @@ if (args.length !== 1 || !sourceArg || !['local', 'published'].includes(sourceAr
 }
 const source = sourceArg.slice('--source='.length)
 const platform = process.platform
-if (platform !== 'darwin' && platform !== 'win32') {
-  throw new Error(`Desktop installer packaging requires macOS or Windows; found ${platform}`)
+if (platform !== 'darwin' && platform !== 'win32' && platform !== 'linux') {
+  throw new Error(`Desktop installer packaging requires macOS, Windows, or Linux; found ${platform}`)
 }
+const packageScript = { darwin: 'package-mac.ts', linux: 'package-linux.ts', win32: 'package-win.ts' }[platform]
 const corepack = platform === 'win32' ? 'corepack.cmd' : 'corepack'
 
 function run(label, command, commandArgs, { cwd = root, env = process.env } = {}) {
@@ -33,7 +34,7 @@ function run(label, command, commandArgs, { cwd = root, env = process.env } = {}
 
 run('Install Desktop dependencies', corepack, ['yarn', 'install', '--immutable'])
 run('Install the pinned official DSH checkout dependencies', corepack, ['yarn', 'upstream:install'])
-run('Check Desktop packaging', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', platform === 'win32' ? 'check:win-package' : 'check:mac-package'])
+run('Check Desktop packaging', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', { darwin: 'check:mac-package', linux: 'check:linux-package', win32: 'check:win-package' }[platform]])
 
 if (source === 'local') {
   run('Install Web dependencies', corepack, ['pnpm', 'install', '--frozen-lockfile'], { cwd: webRoot })
@@ -51,7 +52,7 @@ if (source === 'local') {
 const runtimeEnv = { ...process.env, WORKDSH_USE_LOCAL_RELEASE: source === 'local' ? '1' : '0' }
 run('Prepare the single WorkDSH DSH Profile', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-runtime'], { env: runtimeEnv })
 run('Prepare bundled Python and Node.js', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-primary-runtime'], { env: runtimeEnv })
-run('Build the Desktop installer', process.execPath, [join(root, 'dsh-plugin-desktop', 'scripts', platform === 'win32' ? 'package-win.ts' : 'package-mac.ts')], {
+run('Build the Desktop installer', process.execPath, [join(root, 'dsh-plugin-desktop', 'scripts', packageScript)], {
   env: { ...runtimeEnv, DSH_PACKAGE_CHECK_ALREADY_RAN: '1' },
 })
 if (platform === 'win32') {
