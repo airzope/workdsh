@@ -546,7 +546,7 @@ export class ToolAccessBridge extends Service {
     } catch (error) {
       const code = error instanceof GovernanceContractError ? error.code : 'access/tool-policy-failed';
       if (actor) await this.auditTool(actor, exec, 'denied', code);
-      return { kind: 'deny', reason: `WorkDSH denied this tool call (${code}).` };
+      return { kind: 'deny', reason: `The workspace access policy denied this tool call (${code}).` };
     }
     return next();
   }

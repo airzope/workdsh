@@ -5,6 +5,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brandBuilderOverrides, builtBrand, type BrandIdentity } from './brand.ts'
 import { withoutWindowsSigningSecrets } from './package-win.ts'
 import { assertPortableExecutable } from './verify-win-installer.ts'
 import { VXKEX_NEXT_VERSION } from './vxkex-next.ts'
@@ -58,9 +59,10 @@ export function createWindows7PackageOptions(): Windows7PackageOptions {
  * @param builderCli - electron-builder CLI module.
  * @param application - Verified `dist/win-unpacked` directory.
  * @param output - Dedicated output directory.
+ * @param brand - The built brand.
  * @returns CLI arguments.
  */
-export function windows7BuilderArguments(builderCli: string, application: string, output: string): string[] {
+export function windows7BuilderArguments(builderCli: string, application: string, output: string, brand: BrandIdentity = builtBrand()): string[] {
   return [
     builderCli,
     '--win',
@@ -72,7 +74,8 @@ export function windows7BuilderArguments(builderCli: string, application: string
     '--config.win.signExecutable=false',
     '--config.npmRebuild=false',
     '--config.nsis.include=installer-win7.nsh',
-    '--config.nsis.artifactName=WorkDSH-${version}-win7-${arch}-Offline-Setup.${ext}',
+    ...brandBuilderOverrides(brand).filter(argument => !argument.startsWith('--config.nsis.artifactName=')),
+    `--config.nsis.artifactName=${brand.fileName}-\${version}-win7-\${arch}-Offline-Setup.\${ext}`,
     // The default hook looks for an unpacked app below the output directory.
     '--config.afterAllArtifactBuild=./scripts/verify-win7-offline-installer.ts',
     `--config.directories.output=${output}`,
@@ -91,6 +94,7 @@ export async function packageWindows7OfflineInstaller(
   if (options.platform !== 'win32' || options.arch !== 'x64') {
     throw new Error('The Windows 7 offline installer must be built on a native Windows x64 host')
   }
+  const brand = builtBrand(options.desktopRoot)
   const application = join(options.desktopRoot, 'dist', 'win-unpacked')
   if (!existsSync(join(application, 'resources', 'app.asar'))) {
     throw new Error(`Build the standard Windows installer first; ${application} is missing its application archive`)
@@ -108,7 +112,7 @@ export async function packageWindows7OfflineInstaller(
   ].join('.')}`)
   options.run(
     options.nodeExecutable,
-    windows7BuilderArguments(options.builderCli, application, output),
+    windows7BuilderArguments(options.builderCli, application, output, brand),
     options.desktopRoot,
     {
       ...withoutWindowsSigningSecrets(options.env),
@@ -117,7 +121,7 @@ export async function packageWindows7OfflineInstaller(
     },
   )
   const { version } = JSON.parse(readFileSync(join(options.desktopRoot, 'package.json'), 'utf8')) as { version: string }
-  const installer = join(output, `WorkDSH-${version}-win7-x64-Offline-Setup.exe`)
+  const installer = join(output, `${brand.fileName}-${version}-win7-x64-Offline-Setup.exe`)
   options.assertInstaller(installer)
   options.log(`Built ${installer}`)
   return installer

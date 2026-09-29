@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { withoutMacReleaseSecrets } from './release-preflight.ts'
 import { electronBuilderEnvironment } from './electron-builder-environment.ts'
 import { auditMacOutput } from './macos-compat-audit.ts'
+import { brandBuilderOverrides, builtBrand } from './brand.ts'
 
 /** Injectable native macOS packaging boundary used by focused tests. */
 export interface MacSmokePackageOptions {
@@ -144,6 +145,7 @@ export function packageMacSmoke(options: MacSmokePackageOptions = defaultOptions
       '--config.npmRebuild=false',
       `--config.directories.output=${options.outputDir}`,
       ...(options.electronDist === undefined ? [] : [`--config.electronDist=${options.electronDist}`]),
+      ...brandBuilderOverrides(builtBrand(options.desktopRoot)),
     ],
     options.desktopRoot,
     electronBuilderEnvironment({

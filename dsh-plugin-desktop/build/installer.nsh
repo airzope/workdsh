@@ -159,7 +159,7 @@ Var pid
   ${endIf}
   ${if} $R0 != ""
     DetailPrint "Missing Windows 7 prerequisites:$R0"
-    MessageBox MB_OK|MB_ICONEXCLAMATION "WorkDSH 已安装，但这台 Windows 7 还缺少以下组件；请从 Microsoft 获取并安装，否则部分功能（命令执行、Office 渲染与 PDF 转换、界面显示）可能无法工作：$R0$\r$\n$\r$\nWorkDSH is installed, but this Windows 7 computer is missing the components below. Install them from Microsoft, or some features (command execution, Office rendering and PDF conversion, display) may not work." /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "${SHORTCUT_NAME} 已安装，但这台 Windows 7 还缺少以下组件；请从 Microsoft 获取并安装，否则部分功能（命令执行、Office 渲染与 PDF 转换、界面显示）可能无法工作：$R0$\r$\n$\r$\n${SHORTCUT_NAME} is installed, but this Windows 7 computer is missing the components below. Install them from Microsoft, or some features (command execution, Office rendering and PDF conversion, display) may not work." /SD IDOK
   ${endIf}
 !macroend
 
@@ -171,7 +171,7 @@ Var pid
     Push $R0
     !insertmacro WORKDSH_FIND_KEXCFG $R0
     ${if} $R0 == ""
-      ${if} ${Cmd} `MessageBox MB_YESNO|MB_ICONSTOP "WorkDSH 在 Windows 7 上需要 VxKex NEXT，但未检测到它。请先安装最新版 VxKex NEXT，然后重新运行本安装程序。$\r$\n$\r$\nWorkDSH requires VxKex NEXT on Windows 7, but it was not found. Install the latest VxKex NEXT, then run this installer again.$\r$\n$\r$\n是否打开 VxKex NEXT 下载页？ / Open the VxKex NEXT download page?" /SD IDNO IDYES`
+      ${if} ${Cmd} `MessageBox MB_YESNO|MB_ICONSTOP "${SHORTCUT_NAME} 在 Windows 7 上需要 VxKex NEXT，但未检测到它。请先安装最新版 VxKex NEXT，然后重新运行本安装程序。$\r$\n$\r$\n${SHORTCUT_NAME} requires VxKex NEXT on Windows 7, but it was not found. Install the latest VxKex NEXT, then run this installer again.$\r$\n$\r$\n是否打开 VxKex NEXT 下载页？ / Open the VxKex NEXT download page?" /SD IDNO IDYES`
         ExecShell "open" "${WORKDSH_VXKEX_DOWNLOAD}"
       ${endIf}
       SetErrorLevel 2
@@ -230,7 +230,7 @@ Var pid
     !endif
     !insertmacro WORKDSH_FIND_KEXCFG $R0
     ${if} $R0 == ""
-      MessageBox MB_OK|MB_ICONSTOP "未检测到 VxKex NEXT，WorkDSH 无法在 Windows 7 上启动。请安装 VxKex NEXT（出现管理员授权提示时请允许），然后重新运行本安装程序。$\r$\n$\r$\nVxKex NEXT was not found, so WorkDSH cannot start on Windows 7. Install VxKex NEXT (approve the administrator prompt if one appears), then run this installer again." /SD IDOK
+      MessageBox MB_OK|MB_ICONSTOP "未检测到 VxKex NEXT，${SHORTCUT_NAME} 无法在 Windows 7 上启动。请安装 VxKex NEXT（出现管理员授权提示时请允许），然后重新运行本安装程序。$\r$\n$\r$\nVxKex NEXT was not found, so ${SHORTCUT_NAME} cannot start on Windows 7. Install VxKex NEXT (approve the administrator prompt if one appears), then run this installer again." /SD IDOK
     ${else}
       DetailPrint "Enabling VxKex NEXT for $INSTDIR\${APP_EXECUTABLE_FILENAME}"
       ; Keep the user's version-spoof choices. Propagation and the Chromium
@@ -246,7 +246,7 @@ Var pid
         Sleep 500
       ${next}
       ${if} $R0 != 1
-        MessageBox MB_OK|MB_ICONEXCLAMATION "安装程序无法确认已为 WorkDSH 启用 VxKex NEXT。请右键单击 $INSTDIR\${APP_EXECUTABLE_FILENAME}，选择“属性” > “VxKex”，勾选“为此程序启用 VxKex NEXT”。$\r$\n$\r$\nSetup could not confirm that VxKex NEXT is enabled for WorkDSH. Right-click $INSTDIR\${APP_EXECUTABLE_FILENAME}, choose Properties > VxKex, and check $\"Enable VxKex NEXT for this program$\"." /SD IDOK
+        MessageBox MB_OK|MB_ICONEXCLAMATION "安装程序无法确认已为 ${SHORTCUT_NAME} 启用 VxKex NEXT。请右键单击 $INSTDIR\${APP_EXECUTABLE_FILENAME}，选择“属性” > “VxKex”，勾选“为此程序启用 VxKex NEXT”。$\r$\n$\r$\nSetup could not confirm that VxKex NEXT is enabled for ${SHORTCUT_NAME}. Right-click $INSTDIR\${APP_EXECUTABLE_FILENAME}, choose Properties > VxKex, and check $\"Enable VxKex NEXT for this program$\"." /SD IDOK
       ${endIf}
     ${endIf}
     !insertmacro WORKDSH_WARN_WINDOWS7_PREREQUISITES

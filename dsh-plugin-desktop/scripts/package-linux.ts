@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brandBuilderOverrides, builtBrand } from './brand.ts'
 import { assertLinuxPayload, auditLinuxPayload, type LinuxAuditReport } from './linux-glibc-audit.ts'
 import { prepareSherpaOnnxForUbuntu2004 } from './linux-sherpa-onnx.ts'
 
@@ -93,13 +94,14 @@ export function packageLinuxDeb(options: LinuxPackageOptions = createLinuxPackag
   } else {
     options.log('Skipping the Linux package preflight; the package gate already passed.')
   }
+  const brand = builtBrand(options.desktopRoot)
   const profile = join(options.desktopRoot, 'build', 'workdsh-runtime', 'profiles', 'workdsh')
   const rebuilt = options.prepareNativeBindings(profile, arch)
   if (rebuilt.length > 0) options.log(`Rebuilt for Ubuntu 20.04: ${rebuilt.join(', ')}`)
   options.log(`Building an Ubuntu ${debianArchitecture(arch)} package on this ${arch} host.`)
   options.run(
     options.nodeExecutable,
-    [options.builderCli, '--linux', 'deb', `--${arch}`, '--publish', 'never', '--config.npmRebuild=false'],
+    [options.builderCli, '--linux', 'deb', `--${arch}`, '--publish', 'never', '--config.npmRebuild=false', ...brandBuilderOverrides(brand)],
     options.desktopRoot,
     options.env,
   )
@@ -109,10 +111,10 @@ export function packageLinuxDeb(options: LinuxPackageOptions = createLinuxPackag
   assertLinuxPayload(report)
   options.log(`Ubuntu 20.04 audit passed for ${String(report.images)} ${arch} ELF images (newest ${JSON.stringify(report.newest)}); report: ${reportPath}`)
   const { version } = JSON.parse(readFileSync(join(options.desktopRoot, 'package.json'), 'utf8')) as { version: string }
-  const deb = join(options.desktopRoot, 'dist', `WorkDSH-${version}-linux-${debianArchitecture(arch)}.deb`)
+  const deb = join(options.desktopRoot, 'dist', `${brand.fileName}-${version}-linux-${debianArchitecture(arch)}.deb`)
   if (!existsSync(deb)) throw new Error(`Expected Linux package is missing: ${deb}`)
   // Chinese documents render with CJK fonts, which Ubuntu desktops do not always install.
-  const fields = { Package: 'workdsh', Architecture: debianArchitecture(arch), Recommends: 'fonts-noto-cjk' }
+  const fields = { Package: brand.executableName, Architecture: debianArchitecture(arch), Recommends: 'fonts-noto-cjk' }
   for (const [field, expected] of Object.entries(fields)) {
     const actual = options.debField(deb, field)
     if (actual !== expected) throw new Error(`${deb} has ${field}=${actual}, expected ${expected}`)

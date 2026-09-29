@@ -1,7 +1,7 @@
 #!/bin/bash
 # Mount a WorkDSH DMG read-only on a macOS host (macOS 15 in CI) and run its
 # bundled runtimes headlessly with smoke-bundled-runtime.sh.
-# Usage: smoke-macos-dmg.sh /path/to/WorkDSH-<version>-<arch>.dmg <x64|arm64>
+# Usage: smoke-macos-dmg.sh /path/to/<Product>-<version>-<arch>.dmg <x64|arm64>
 set -euo pipefail
 
 dmg="$1"

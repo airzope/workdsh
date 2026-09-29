@@ -1,3 +1,7 @@
+## Unreleased
+
+- 导出的 XLSX 与 PDF 的创建者使用白牌产品名称（`WORKDSH_BRAND_NAME`），未设置时仍为 WorkDSH。
+
 ## 0.1.0-alpha.9 — 2026-09-25
 
 - 将 Office 插件按官方 DSH 0.1.7-rc.2 的公开接口重新打包。

@@ -3,6 +3,7 @@
 import { realpathSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { builtBrand } from './brand.ts'
 import { verifyElectronExecutableFuses } from './verify-electron-fuses.ts'
 
 /** Same name as `WINDOWS7_PREPACKAGED_ENV` in package-win7.ts, kept import-free for electron-builder. */
@@ -40,6 +41,6 @@ export default async function verifyWindows7OfflineBuild(
   if (application === undefined || realpathSync(application) !== realpathSync(expected)) {
     throw new Error(`the Windows 7 offline installer must wrap ${expected}`)
   }
-  await (options.verifyFuses ?? verifyElectronExecutableFuses)(join(expected, 'WorkDSH.exe'))
+  await (options.verifyFuses ?? verifyElectronExecutableFuses)(join(expected, `${builtBrand(desktopRoot).fileName}.exe`))
   return []
 }

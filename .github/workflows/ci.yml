@@ -7,6 +7,12 @@ on:
     branches: [main]
     tags: ['desktop-v*']
   workflow_dispatch:
+    inputs:
+      brand:
+        description: 'White-label brand directory, e.g. dsh-plugin-desktop/branding/acme (empty: WorkDSH)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -17,6 +23,8 @@ concurrency:
 
 env:
   DSH_TELEMETRY_DISABLED: '1'
+  # Build-time white-label brand; tags and pushes always build WorkDSH.
+  WORKDSH_BRAND: ${{ github.event_name == 'workflow_dispatch' && inputs.brand || '' }}
 
 jobs:
   # Keep required checks conclusive for documentation-only changes. Workflow
@@ -296,7 +304,7 @@ jobs:
           # 24.04 exercises the t64 alternatives in the package's dependencies.
           for image in ubuntu:20.04 ubuntu:24.04; do
             docker run --rm -v "$PWD/dsh-plugin-desktop:/work:ro" "$image" \
-              bash -c 'bash /work/scripts/smoke-ubuntu-deb.sh /work/dist/WorkDSH-*-linux-*.deb'
+              bash -c 'bash /work/scripts/smoke-ubuntu-deb.sh /work/dist/*-linux-*.deb'
           done
       - name: Upload Ubuntu compatibility audit
         if: ${{ !cancelled() }}

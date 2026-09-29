@@ -16,10 +16,13 @@ import {
 import { release } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brandEnvironment, readPackagedBrand } from './brand.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
 const PROFILE_NAME = 'workdsh'
+const BRAND_DIRECTORY = fileURLToPath(new URL('../build/brand/', import.meta.url))
+const brand = readPackagedBrand(BRAND_DIRECTORY)
 const READY_PATTERN = /dsh web:\s+(http:\/\/127\.0\.0\.1:\d+\/?\?token=[^\s]+)/u
 
 let runtime: ChildProcess | undefined
@@ -134,13 +137,13 @@ function materializeRuntimeProfile(home: string): string {
 }
 
 function openWindow(url: string): void {
-  const icon = fileURLToPath(new URL('../build/app-icon.png', import.meta.url))
+  const icon = join(BRAND_DIRECTORY, 'app-icon.png')
   window = new BrowserWindow({
     width: 1440,
     height: 960,
     minWidth: 960,
     minHeight: 640,
-    title: 'WorkDSH',
+    title: brand.name,
     icon,
     backgroundColor: '#111113',
     show: false,
@@ -152,7 +155,7 @@ function openWindow(url: string): void {
   })
   window.on('page-title-updated', event => {
     event.preventDefault()
-    window?.setTitle('WorkDSH')
+    window?.setTitle(brand.name)
   })
   window.webContents.setWindowOpenHandler(({ url: target }) => {
     if (target.startsWith('https://') || target.startsWith('http://')) void shell.openExternal(target)
@@ -174,6 +177,7 @@ function startRuntime(home: string, profileDir: string): void {
       DSH_AGENTS_HOME: join(home, 'agents'),
       DSH_BUNDLED_PRIMARY_RUNTIME: bundledPrimaryRuntime(),
       DSH_ELECTRON_EXECUTABLE: process.execPath,
+      ...brandEnvironment(brand, BRAND_DIRECTORY),
       ELECTRON_RUN_AS_NODE: undefined,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -219,7 +223,9 @@ const worker = browserWorkerRequest()
 if (worker !== undefined) {
   startBrowserWorker(worker)
 } else {
-app.setName('WorkDSH')
+// The display name may be any language; user data stays in the brand's ASCII folder.
+app.setName(brand.name)
+app.setPath('userData', join(app.getPath('appData'), brand.dataDirectory))
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {

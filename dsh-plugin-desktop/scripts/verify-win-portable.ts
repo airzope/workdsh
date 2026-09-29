@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import AdmZip from 'adm-zip'
 import { assertPortableExecutableBuffer } from './verify-win-installer.ts'
+import { builtBrand } from './brand.ts'
 
 export interface WindowsPortableVerificationOptions {
   /** Desktop package root containing package.json and dist. */
@@ -32,10 +33,11 @@ function defaultOptions(): WindowsPortableVerificationOptions {
 export function verifyWindowsPortable(
   options: WindowsPortableVerificationOptions = defaultOptions(),
 ): string {
+  const { fileName } = builtBrand(options.desktopRoot)
   const portablePath = join(
     options.desktopRoot,
     'dist',
-    `WorkDSH-${options.version}-x64-Portable.zip`,
+    `${fileName}-${options.version}-x64-Portable.zip`,
   )
   const stat = statSync(portablePath)
   if (!stat.isFile() || stat.size === 0) {
@@ -43,9 +45,9 @@ export function verifyWindowsPortable(
   }
   const archive = new AdmZip(portablePath)
   const entries = archive.getEntries().filter(entry => !entry.isDirectory)
-  const executable = entries.find(entry => entry.entryName.replaceAll('\\', '/') === 'WorkDSH.exe')
+  const executable = entries.find(entry => entry.entryName.replaceAll('\\', '/') === `${fileName}.exe`)
   if (executable === undefined) {
-    throw new Error(`Windows portable archive is missing WorkDSH.exe: ${portablePath}`)
+    throw new Error(`Windows portable archive is missing ${fileName}.exe: ${portablePath}`)
   }
   if (!entries.some(entry => entry.entryName.replaceAll('\\', '/') === 'resources/app.asar')) {
     throw new Error(`Windows portable archive is missing resources/app.asar: ${portablePath}`)
@@ -53,7 +55,7 @@ export function verifyWindowsPortable(
   assertPortableExecutableBuffer(
     executable.getData(),
     'Windows portable application',
-    `${portablePath}:WorkDSH.exe`,
+    `${portablePath}:${fileName}.exe`,
   )
   return portablePath
 }

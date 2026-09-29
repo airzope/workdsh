@@ -1,3 +1,7 @@
+## Unreleased
+
+- 白牌：Host 读取 Desktop 载体传入的 `WORKDSH_BRAND_NAME` 与 `WORKDSH_BRAND_MARK`，在 `/api/workdsh-brand` 提供产品名称与标志；侧栏品牌、页面标题和浏览器提示词随之显示。未设置时仍为 WorkDSH。
+
 ## 0.1.0-alpha.51 — 2026-09-25
 
 - Desktop 中关闭调用系统浏览器的旧 Playwright provider，改用 Session 持有的 Electron 浏览器；Web 保留已发布的 Playwright 侧栏行为。

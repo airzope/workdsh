@@ -10,6 +10,7 @@ import {
   withoutMacReleaseSecrets,
 } from './release-preflight.ts'
 import { auditMacOutput } from './macos-compat-audit.ts'
+import { brandBuilderOverrides, builtBrand } from './brand.ts'
 
 /** Injectable release boundary used by focused tests. */
 export interface MacReleaseOptions {
@@ -109,6 +110,7 @@ export function releaseMac(options: MacReleaseOptions = defaultReleaseOptions())
     '--config.forceCodeSigning=true', '--config.mac.notarize=true',
     '--config.npmRebuild=false',
     `--config.directories.output=${options.outputDir}`,
+    ...brandBuilderOverrides(builtBrand(options.desktopRoot)),
   ], options.desktopRoot, releaseEnvironment)
   ;(options.audit ?? ((outputDir, arch) => void auditMacOutput(outputDir, arch, options.log)))(options.outputDir, targetArch)
   options.run(

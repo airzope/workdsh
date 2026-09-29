@@ -116,6 +116,31 @@ describe('Ubuntu deb packaging', () => {
     expect(logs).toContain('Rebuilt for Ubuntu 20.04: node_modules/sherpa-onnx-linux-x64/sherpa-onnx.node')
   })
 
+  it('packages the brand the build generated under its names', () => {
+    const root = desktop()
+    const steps: string[] = []
+    mkdirSync(join(root, 'build', 'brand'), { recursive: true })
+    writeFileSync(join(root, 'build', 'brand', 'brand.json'), JSON.stringify({
+      ...JSON.parse(readFileSync(new URL('../branding/workdsh/brand.json', import.meta.url), 'utf8')) as object,
+      name: '智办', fileName: 'AcmeDesk', executableName: 'acmedesk', mark: 'mark.svg',
+    }))
+
+    const deb = packageLinuxDeb(options(root, steps, {
+      env: { DSH_PACKAGE_CHECK_ALREADY_RAN: '1' },
+      run: (command, args) => {
+        steps.push(`${command} ${args.join(' ')}`)
+        if (command === '/usr/bin/node') writeFileSync(join(root, 'dist', 'AcmeDesk-2.0.6-alpha.1-linux-amd64.deb'), '!<arch>')
+      },
+      debField: (_deb, field) => ({ Package: 'acmedesk', Architecture: 'amd64', Recommends: 'fonts-noto-cjk' })[field] ?? '',
+    }))
+
+    expect(deb).toBe(join(root, 'dist', 'AcmeDesk-2.0.6-alpha.1-linux-amd64.deb'))
+    const build = steps.find(step => step.includes('/builder/cli.js')) ?? ''
+    expect(build).toContain('--config.productName=AcmeDesk')
+    expect(build).toContain('--config.linux.desktop.entry.Name=智办')
+    expect(build).toContain('--config.deb.packageName=acmedesk')
+  })
+
   it('fails when a bundled binary needs a newer glibc than Ubuntu 20.04', () => {
     const root = desktop()
     expect(() => packageLinuxDeb(options(root, [], {

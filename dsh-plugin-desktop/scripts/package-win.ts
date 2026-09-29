@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brandBuilderOverrides, builtBrand } from './brand.ts'
 
 const WINDOWS_SIGNING_KEYS = [
   'CSC_IDENTITY_AUTO_DISCOVERY',
@@ -154,6 +155,7 @@ export function packageWindowsArtifact(
       'never',
       '--config.win.signExecutable=false',
       '--config.npmRebuild=false',
+      ...brandBuilderOverrides(builtBrand(options.desktopRoot)),
     ],
     options.desktopRoot,
     {

@@ -15,11 +15,7 @@
   "main": "lib/workdsh-main.js",
   "desktopName": "workdsh.desktop",
   "files": [
-    "build/app-icon.ico",
-    "build/app-icon.png",
-    "build/app-icon-mac.png",
-    "build/tray-icon.svg",
-    "build/tray-icon*.png",
+    "build/brand/**",
     "lib/workdsh-main.js",
     "README.md",
     "README.zh.md",
@@ -29,7 +25,7 @@
     "node": "^22.19.0 || >=24.0.0"
   },
   "scripts": {
-    "build": "node scripts/generate-windows-app-icon.mjs && node scripts/generate-mac-app-icon.mjs && node scripts/generate-tray-icons.mjs && node scripts/clean.mjs && tsdown && tsc -p tsconfig.json --emitDeclarationOnly",
+    "build": "node scripts/generate-brand.ts && node scripts/clean.mjs && tsdown && tsc -p tsconfig.json --emitDeclarationOnly",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "test": "vitest run && node --test scripts/verify-profile-release.test.mjs",
     "check": "yarn run build && yarn run typecheck && yarn run test",
@@ -92,11 +88,7 @@
       "nsis": "1.2.1"
     },
     "files": [
-      "build/app-icon.ico",
-      "build/app-icon.png",
-      "build/app-icon-mac.png",
-      "build/tray-icon.svg",
-      "build/tray-icon*.png",
+      "build/brand/**",
       "lib/workdsh-main.js",
       "package.json",
       "!node_modules/**"
@@ -104,9 +96,10 @@
     "mac": {
       "artifactName": "WorkDSH-${version}-${arch}.${ext}",
       "asarUnpack": [
-        "build/app-icon-mac.png",
-        "build/tray-iconTemplate.png",
-        "build/tray-iconTemplate@2x.png"
+        "build/brand/app-icon-mac.png",
+        "build/brand/tray-iconTemplate.png",
+        "build/brand/tray-iconTemplate@2x.png",
+        "build/brand/mark.*"
       ],
       "target": [
         "dir"
@@ -121,7 +114,7 @@
         ]
       },
       "hardenedRuntime": true,
-      "icon": "build/app-icon-mac.png",
+      "icon": "build/brand/app-icon-mac.png",
       "notarize": true,
       "signIgnore": [
         "\\.(?:pak|dat|wasm)$"
@@ -132,11 +125,12 @@
     },
     "win": {
       "asarUnpack": [
-        "build/app-icon.png",
-        "build/tray-icon-blue.png",
-        "build/tray-icon-blue@1.25x.png",
-        "build/tray-icon-blue@1.5x.png",
-        "build/tray-icon-blue@2x.png"
+        "build/brand/app-icon.png",
+        "build/brand/tray-icon-blue.png",
+        "build/brand/tray-icon-blue@1.25x.png",
+        "build/brand/tray-icon-blue@1.5x.png",
+        "build/brand/tray-icon-blue@2x.png",
+        "build/brand/mark.*"
       ],
       "target": [
         {
@@ -147,11 +141,11 @@
         }
       ],
       "artifactName": "WorkDSH-${version}-${arch}-Portable.${ext}",
-      "icon": "build/app-icon.ico"
+      "icon": "build/brand/app-icon.ico"
     },
     "nsis": {
       "include": "installer.nsh",
-      "installerIcon": "build/app-icon.ico",
+      "installerIcon": "build/brand/app-icon.ico",
       "license": "THIRD_PARTY_NOTICES.md",
       "oneClick": false,
       "perMachine": false,
@@ -161,22 +155,23 @@
       "createStartMenuShortcut": true,
       "differentialPackage": false,
       "shortcutName": "WorkDSH",
-      "uninstallerIcon": "build/app-icon.ico",
+      "uninstallerIcon": "build/brand/app-icon.ico",
       "useZip": false,
       "artifactName": "WorkDSH-${version}-${arch}-Setup.${ext}"
     },
     "linux": {
       "asarUnpack": [
-        "build/app-icon.png",
-        "build/tray-icon-blue.png",
-        "build/tray-icon-blue@1.25x.png",
-        "build/tray-icon-blue@1.5x.png",
-        "build/tray-icon-blue@2x.png"
+        "build/brand/app-icon.png",
+        "build/brand/tray-icon-blue.png",
+        "build/brand/tray-icon-blue@1.25x.png",
+        "build/brand/tray-icon-blue@1.5x.png",
+        "build/brand/tray-icon-blue@2x.png",
+        "build/brand/mark.*"
       ],
       "target": [
         "dir"
       ],
-      "icon": "build/app-icon.png",
+      "icon": "build/brand/app-icon.png",
       "executableName": "workdsh",
       "artifactName": "WorkDSH-${version}-linux-${arch}.${ext}",
       "category": "Office",

@@ -10,7 +10,7 @@ Status: implemented
 
 ## Decision
 
-`build/app-icon.png` 继续作为源文件，以及 Windows 与 Linux 应用图标。Headless 构建会运行 `scripts/generate-mac-app-icon.mjs`：脚本校验 1024 × 1024 RGBA16 源图及其 ICC profile，把完整图形缩放为 824 × 824 像素并居中放入透明的 1024 × 1024 画布，同时在 `build/app-icon-mac.png` 中保留 16-bit Display P3 色彩数据。生成器会拒绝覆盖源图的输出路径。
+品牌 logo 继续作为源文件，以及 Windows 与 Linux 应用图标；WorkDSH 的 logo 是 `branding/workdsh/logo.png`，原样复制为 `build/brand/app-icon.png`。Headless 构建会运行 `scripts/generate-brand.ts`：把完整图形缩放为 824 × 824 像素并居中放入透明的 1024 × 1024 画布，以 RGBA16 写入 `build/brand/app-icon-mac.png` 并保留 logo 的 ICC profile，因此 WorkDSH 保留 16-bit Display P3 色彩数据。白牌 logo 可以是至少 512 像素的任意正方形 PNG；参见[白牌说明](2026-09-29-build-time-white-label.zh.md)。
 
 macOS Electron Builder 配置使用生成资源。Host shell 会在 Darwin 上选择同一个生成路径，再把 spec 交给原生 runtime，因此安装图标、开发环境 Dock 图标与窗口图标使用同一项平台决策。Windows 与 Linux 继续使用未经修改的源图。发布文件与物理 packaged runtime 都必须包含两张图，因此缺少生成资源会在发布前直接失败。
 

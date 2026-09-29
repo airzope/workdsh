@@ -1,4 +1,4 @@
 # Bilingual-pair consistency record: the git blob hash of each side as of the last
 # confirmed-consistent state. Both languages carry equal authority.
-2026-08-15-macos-app-icon-inset.md: 180428b241505baaf52ec02ffb74eeac17ce7c8f
-2026-08-15-macos-app-icon-inset.zh.md: 5e30730cff30d5dd40773d5a8c670f7c98d4b5a4
+2026-08-15-macos-app-icon-inset.md: 1152c9a84776835b648c45fca9e78ab86b10d181
+2026-08-15-macos-app-icon-inset.zh.md: af0066c4ca21d9e72b5e08a7b68cfe95ef7a270c
