@@ -27,6 +27,9 @@ function baseOptions(
     desktopRoot: '/repo/dsh-plugin-desktop',
     outputDir: '/repo/dsh-plugin-desktop/dist/mac-release',
     resetOutput: () => undefined,
+    audit: (outputDir, arch) => {
+      logs.push(`audit ${outputDir} ${arch}`)
+    },
     listCodeSigningIdentities: identityEnv => {
       identityEnvironments.push({ ...identityEnv })
       return DEVELOPER_ID_OUTPUT
@@ -93,8 +96,10 @@ describe('macOS release command boundary', () => {
       cwd: '/repo/dsh-plugin-desktop',
       env: { PATH: '/usr/bin', SAFE_BUILD_VALUE: 'kept' },
     })
-    expect(logs).toHaveLength(1)
+    expect(logs).toHaveLength(2)
     expect(logs[0]).toContain('signing via keychain; notarization via apple-id')
+    // The audit runs between the signed build and the release verification.
+    expect(logs[1]).toBe('audit /repo/dsh-plugin-desktop/dist/mac-release arm64')
     expect(logs[0]).not.toContain(appPassword)
   })
 

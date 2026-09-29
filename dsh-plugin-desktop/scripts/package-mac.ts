@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { withoutMacReleaseSecrets } from './release-preflight.ts'
 import { electronBuilderEnvironment } from './electron-builder-environment.ts'
+import { auditMacOutput } from './macos-compat-audit.ts'
 
 /** Injectable native macOS packaging boundary used by focused tests. */
 export interface MacSmokePackageOptions {
@@ -32,6 +33,8 @@ export interface MacSmokePackageOptions {
   readonly electronDist?: string
   /** Absolute packaged-DMG verification script. */
   readonly verifier: string
+  /** Audit the built application for its architecture and macOS 15. */
+  readonly audit: (outputDir: string, arch: 'x64' | 'arm64') => void
   /** Node executable used to run package-local scripts. */
   readonly nodeExecutable: string
   /** Execute one packaging command. */
@@ -76,6 +79,7 @@ function defaultOptions(): MacSmokePackageOptions {
     builderCli: require.resolve('electron-builder/cli.js'),
     ...(existsSync(resolve(electronDist, 'Electron.app')) ? { electronDist } : {}),
     verifier: fileURLToPath(new URL('./verify-mac-smoke.ts', import.meta.url)),
+    audit: (outputDir, arch) => void auditMacOutput(outputDir, arch),
     nodeExecutable: process.execPath,
     run,
     log: message => console.log(message),
@@ -110,6 +114,10 @@ export function packageMacSmoke(options: MacSmokePackageOptions = defaultOptions
   if (targetArch !== 'x64' && targetArch !== 'arm64') {
     throw new Error(`unsupported macOS target architecture: ${targetArch}`)
   }
+  if (targetArch !== options.arch) {
+    // The Profile's per-CPU packages (LibreOffice Kit, sherpa-onnx, canvas) follow the Node architecture.
+    throw new Error(`macOS ${targetArch} packages must be built by ${targetArch} Node; this Node is ${options.arch}. On Apple silicon run an x64 Node under Rosetta for x64.`)
+  }
   const cleanEnvironment = withoutMacReleaseSecrets(options.env)
   options.log('Building an unsigned macOS DMG smoke; signing and notarization are release-only steps.')
   if (options.env.DSH_PACKAGE_CHECK_ALREADY_RAN !== '1') {
@@ -143,6 +151,7 @@ export function packageMacSmoke(options: MacSmokePackageOptions = defaultOptions
       CSC_IDENTITY_AUTO_DISCOVERY: 'false',
     }),
   )
+  options.audit(options.outputDir, targetArch)
   options.run(
     options.nodeExecutable,
     [options.verifier, options.outputDir, targetArch],

@@ -9,6 +9,7 @@ import {
   assertMacReleaseReady,
   withoutMacReleaseSecrets,
 } from './release-preflight.ts'
+import { auditMacOutput } from './macos-compat-audit.ts'
 
 /** Injectable release boundary used by focused tests. */
 export interface MacReleaseOptions {
@@ -24,6 +25,8 @@ export interface MacReleaseOptions {
   readonly outputDir: string
   /** Remove only the dedicated generated release output before packaging. */
   readonly resetOutput: () => void
+  /** Audit the built application for its architecture and macOS 15. */
+  readonly audit?: (outputDir: string, arch: 'x64' | 'arm64') => void
   /** Read code-signing identities with a credential-free environment. */
   readonly listCodeSigningIdentities: (env: NodeJS.ProcessEnv) => string
   /** Execute one release command. */
@@ -96,6 +99,10 @@ export function releaseMac(options: MacReleaseOptions = defaultReleaseOptions())
   if (targetArch !== 'x64' && targetArch !== 'arm64') {
     throw new Error(`unsupported macOS target architecture: ${targetArch}`)
   }
+  if (targetArch !== options.arch) {
+    // The Profile's per-CPU packages follow the Node architecture that prepared it.
+    throw new Error(`macOS ${targetArch} releases must be built by ${targetArch} Node; this Node is ${options.arch}. On Apple silicon run an x64 Node under Rosetta for x64.`)
+  }
   options.resetOutput()
   options.run('yarn', [
     'exec', 'electron-builder', '--mac', 'dmg', `--${targetArch}`,
@@ -103,6 +110,7 @@ export function releaseMac(options: MacReleaseOptions = defaultReleaseOptions())
     '--config.npmRebuild=false',
     `--config.directories.output=${options.outputDir}`,
   ], options.desktopRoot, releaseEnvironment)
+  ;(options.audit ?? ((outputDir, arch) => void auditMacOutput(outputDir, arch, options.log)))(options.outputDir, targetArch)
   options.run(
     process.execPath,
     ['scripts/verify-mac-release.ts', options.outputDir, targetArch],
