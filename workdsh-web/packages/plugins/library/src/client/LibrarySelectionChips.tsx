@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
-import type { LibraryAssetKind, LibraryTaskReference } from 'workdsh-contracts/library';
+import type { LibraryTaskReference } from 'workdsh-contracts/library';
+import { kindIcons } from './kinds.js';
 import type { LibraryClient } from './management.js';
 import { listenForLibrarySelection, notifyLibrarySelectionChanged, requestLibraryPicker } from './selection-events.js';
 
 type Props = PropsRuntime<'conversation.input.overlay'> & { management: LibraryClient };
-const labels: Record<LibraryAssetKind, string> = { markdown: 'M', text: 'T', html: '</>', pdf: 'PDF', docx: 'W', pptx: 'P' };
+const labels = kindIcons;
 const css = `
 [data-composer-card]:has(.wd-library-selection-chips){padding-top:50px}
 .wd-library-selection-chips{box-sizing:border-box;position:absolute;z-index:2;top:9px;left:12px;right:12px;height:34px;display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none;pointer-events:auto}

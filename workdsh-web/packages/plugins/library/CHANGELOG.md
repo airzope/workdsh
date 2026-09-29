@@ -1,3 +1,10 @@
+## Unreleased
+
+- 通过 AnyDoc（`@firecrawl/anydoc`）本地转换 DOC、XLS/XLSX、PPT、ODT/ODS/ODP、RTF、EPUB 和 CSV。
+- 通过 PaddleOCR PP-OCRv5 移动版识别图片和 PDF 中没有文字层的页面；ONNX Runtime WebAssembly 在工作线程中运行。
+- 转换移出资料库串行队列；图片与扫描版 PDF 可查看识别文本，转换说明显示在正文上方。
+- 新增 Agent 工具 `document_to_markdown` 与 `document_ocr`。
+
 ## 0.1.0-alpha.5 — 2026-09-25
 
 - 将资料库插件按官方 DSH 0.1.7-rc.2 的公开接口重新打包。

@@ -17,7 +17,12 @@
 
 ## 验收与下一步
 
-完成对应 PLAN 任务及 [验收矩阵](../../../docs/ACCEPTANCE.md) 场景，记录真实测试证据后才更新为完成。当前 Host 与 Client 入口可加载，数据保存到 `$DSH_HOME/library`。支持 MD、TXT、HTML、PDF、DOCX、PPTX；所有格式保留原件并生成独立检索文本。HTML 在无 Host 权限、无网络访问的沙箱中按原始样式和内联交互展示；PDF 可直接预览；安装 Office 插件时，Word 使用 `docx-preview`、PowerPoint 使用 `pptx-react-viewer` 打开原件，未安装时回退为派生检索文本和原件下载。Library 与 Office 通过公开可选预览注册表协作，不互相导入运行时内部实现。
+完成对应 PLAN 任务及 [验收矩阵](../../../docs/ACCEPTANCE.md) 场景，记录真实测试证据后才更新为完成。当前 Host 与 Client 入口可加载，数据保存到 `$DSH_HOME/library`。支持 MD、TXT、HTML、PDF、DOCX、PPTX，以及由 [AnyDoc](https://github.com/firecrawl/anydoc) 在本地转换的 DOC、XLS/XLSX、PPT、ODT/ODS/ODP、RTF、EPUB、CSV，和由 PaddleOCR（PP-OCRv5 移动版）识别的图片（PNG/JPEG/BMP/GIF/WebP/TIFF）；所有格式保留原件并生成独立检索文本。
+
+- PDF 中没有文字层的页面（扫描件）会渲染后用 OCR 识别，每个文件最多 100 页；有文字层的页面仍直接提取。图片和扫描版 PDF 可在原件与识别文本之间切换，转换说明显示在正文上方。
+- OCR 使用 ONNX Runtime 的 WebAssembly 版本在独立工作线程中运行，不阻塞其他资料库操作，也不需要按平台区分的推理库；模型与运行时文件由 `scripts/prepare-library-ocr.mjs` 按固定 SHA-256 准备到 `resources/ocr`（可用 `WORKDSH_OCR_MODEL_ARCHIVE` 指定本地模型包离线构建）。AnyDoc 只做本地转换，不使用其托管 OCR 选项，文件不会离开本机。
+- 转换在资料库串行队列之外进行：导入先在队列中校验，转换完成后再在队列中提交并重新校验。
+- 插件还注册两个 Agent 工具：`document_to_markdown` 按路径读取工作区文档并返回分页 Markdown，`document_ocr` 逐页识别图片或 PDF 并返回文字与置信度。HTML 在无 Host 权限、无网络访问的沙箱中按原始样式和内联交互展示；PDF 可直接预览；安装 Office 插件时，Word 使用 `docx-preview`、PowerPoint 使用 `pptx-react-viewer` 打开原件，未安装时回退为派生检索文本和原件下载。Library 与 Office 通过公开可选预览注册表协作，不互相导入运行时内部实现。
 
 发布包可通过 `corepack pnpm probe:library` 验证独立安装、两次冷启动、卸载保留 `$DSH_HOME/library`、重新安装和资料恢复。页面支持搜索、最近、本地产物、完整目录树、目录内新建与导入、移动、添加到当前任务、停用与重新启用；停用会立即阻断历史任务引用的正文读取。搜索结果显示目录、类型、来源、修订、转换状态和页/段/幻灯片位置。
 

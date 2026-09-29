@@ -16,7 +16,7 @@ delete manifest.devDependencies; delete manifest.scripts;
 manifest.workdshRelease = {
   scope: 'local-library-alpha',
   storage: '$DSH_HOME/library',
-  formats: ['md', 'markdown', 'txt', 'html', 'htm', 'pdf', 'docx', 'pptx'],
+  formats: ['md', 'markdown', 'txt', 'html', 'htm', 'pdf', 'docx', 'pptx', 'doc', 'xls', 'xlsx', 'xlsm', 'ppt', 'odt', 'ods', 'odp', 'rtf', 'epub', 'csv', 'png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'tif', 'tiff'],
   preservesOriginals: true,
 };
 await writeFile(join(stage, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -28,7 +28,7 @@ await writeFile(join(destination, 'SHA256SUMS.txt'), `${sha256}  ${filename}\n`)
 await writeFile(join(destination, 'release-manifest.json'), `${JSON.stringify({
   name: manifest.name, version: manifest.version, harness: '0.1.7-rc.2', filename, sha256, bytes: bytes.length,
   storage: manifest.workdshRelease.storage, formats: manifest.workdshRelease.formats,
-  limitations: ['Local personal space only', 'Scanned PDF OCR is not included', 'DOCX/PPTX original preview requires the optional workdsh-plugin-office client'],
+  limitations: ['Local personal space only', 'OCR covers at most 100 pages without a text layer per PDF', 'DOCX/PPTX original preview requires the optional workdsh-plugin-office client'],
 }, null, 2)}\n`);
 await rm(stage, { recursive: true, force: true });
 console.log(`Library release candidate: ${filename}; files: ${(await readdir(destination)).sort().join(', ')}`);

@@ -1,11 +1,34 @@
 import JSZip from 'jszip';
 import type { LibraryAssetKind } from 'workdsh-contracts/library';
+import { sharedOcr, type OcrApi, type OcrPageResult } from './ocr/service.js';
 
 export interface ConversionResult {
   readonly markdown: string;
   readonly warnings: readonly string[];
   readonly locations: readonly { readonly kind: 'page' | 'paragraph' | 'slide'; readonly index: number; readonly label: string }[];
 }
+
+/** The parts of @firecrawl/anydoc that conversion uses. */
+export interface AnyDocApi {
+  toMarkdownBytes(bytes: Uint8Array, format?: string | null): Promise<string>;
+  formatFromBytes(bytes: Uint8Array): string | null;
+}
+
+/** Engines behind conversion, replaceable in tests. */
+export interface ConverterServices {
+  readonly ocr: OcrApi;
+  readonly anydoc: () => Promise<AnyDocApi>;
+}
+
+export const defaultConverterServices: ConverterServices = {
+  ocr: sharedOcr,
+  anydoc: async () => await import('@firecrawl/anydoc') as unknown as AnyDocApi,
+};
+
+/** Kinds converted by AnyDoc, which runs locally and never uses its hosted OCR option. */
+export const ANYDOC_KINDS = ['doc', 'xls', 'xlsx', 'ppt', 'odt', 'ods', 'odp', 'rtf', 'epub', 'csv'] as const satisfies readonly LibraryAssetKind[];
+/** PDF pages without a text layer that are recognized per document. */
+export const MAX_OCR_PAGES = 100;
 
 const MAX_ZIP_ENTRIES = 5_000;
 const MAX_ZIP_UNCOMPRESSED = 100 * 1024 * 1024;
@@ -104,25 +127,102 @@ async function pptx(bytes: Uint8Array, signal?: AbortSignal): Promise<Conversion
   return { markdown: `${sections.join('\n\n')}\n`, locations, warnings: ['图片、图表、动画和空间布局未写入检索文本。'] };
 }
 
-async function pdf(bytes: Uint8Array, signal?: AbortSignal): Promise<ConversionResult> {
+const headingLocations = (markdown: string): ConversionResult['locations'][number][] =>
+  [...markdown.matchAll(/^(#{1,6})\s+(.+)$/gm)].slice(0, 500).map((match, index) => ({ kind: 'paragraph', index: index + 1, label: `标题 ${match[1]!.length}：${match[2]!.trim().slice(0, 80)}` }));
+
+async function anydoc(kind: LibraryAssetKind, bytes: Uint8Array, services: ConverterServices, signal?: AbortSignal): Promise<ConversionResult> {
   checkSignal(signal);
+  const engine = await services.anydoc();
+  // Content wins over the extension: a .doc saved as RTF still converts.
+  const format = kind === 'csv' ? 'csv' : engine.formatFromBytes(bytes) ?? (kind === 'xls' ? 'xlsx' : kind);
+  let markdown: string;
+  try { markdown = await engine.toMarkdownBytes(bytes, format); }
+  catch (cause) {
+    const code = (cause as { code?: unknown }).code;
+    if (code === 'encrypted') throw new Error('library/encrypted');
+    if (code === 'resourceLimit') throw new Error('library/archive-limit');
+    if (code === 'unsupported' || code === 'malformed' || code === 'missingPart') throw new Error('library/invalid-document');
+    throw cause;
+  }
+  checkSignal(signal);
+  if (!markdown.trim()) throw new Error('library/invalid-document');
+  const warnings = kind === 'csv' || kind === 'xls' || kind === 'xlsx' || kind === 'ods'
+    ? ['表格按工作表写入检索文本；公式只保留计算结果。']
+    : ['图片按替代文字写入检索文本；图片中的文字未识别。'];
+  return { markdown: markdown.endsWith('\n') ? markdown : `${markdown}\n`, locations: headingLocations(markdown), warnings };
+}
+
+const pageList = (pages: readonly number[]): string => `第 ${pages.slice(0, 10).join('、')} 页${pages.length > 10 ? `等 ${String(pages.length)} 页` : ''}`;
+
+const ocrWarning = (pages: readonly OcrPageResult[], label: (index: number) => string): string[] => {
+  const empty = pages.filter(page => !page.text.trim()).map(page => label(page.index));
+  return empty.length ? [`${empty.slice(0, 10).join('、')}${empty.length > 10 ? ` 等 ${String(empty.length)} 处` : ''}未识别到文字。`] : [];
+};
+
+async function image(bytes: Uint8Array, services: ConverterServices, signal?: AbortSignal): Promise<ConversionResult> {
+  checkSignal(signal);
+  const pages = await services.ocr.recognizeImage(bytes, signal);
+  const single = pages.length === 1;
+  const sections = pages.map(page => single ? page.text : `## 第 ${page.index} 页\n\n${page.text}`);
+  if (!pages.some(page => page.text.trim())) throw new Error('library/no-text');
+  return {
+    markdown: `${sections.join('\n\n')}\n`,
+    locations: pages.map(page => ({ kind: 'page', index: page.index, label: single ? '图片' : `第 ${page.index} 页` })),
+    warnings: ['文字由 PaddleOCR（PP-OCRv5 移动版）识别，请核对关键数字与专有名词。', ...ocrWarning(pages, index => single ? '图片' : `第 ${index} 页`)],
+  };
+}
+
+async function pdf(bytes: Uint8Array, services: ConverterServices, signal?: AbortSignal): Promise<ConversionResult> {
+  checkSignal(signal);
+  // PDF.js detaches the buffer it parses; OCR renders the pages from this copy.
+  const pages = Uint8Array.from(bytes);
   if (new TextDecoder('ascii').decode(bytes.subarray(0, 5)) !== '%PDF-') throw new Error('library/invalid-pdf');
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   let document: Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>;
   try { document = await pdfjs.getDocument({ data: bytes, useWorkerFetch: false, isEvalSupported: false }).promise; }
   catch { throw new Error('library/invalid-pdf'); }
-  const sections: string[] = [];
+  const texts: string[] = [];
   try {
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       checkSignal(signal); const page = await document.getPage(pageNumber); const content = await page.getTextContent();
-      const text = content.items.map((item) => 'str' in item ? item.str : '').filter(Boolean).join(' ');
-      sections.push(`## 第 ${pageNumber} 页\n\n${text}`);
+      texts.push(content.items.map((item) => 'str' in item ? item.str : '').filter(Boolean).join(' '));
     }
-    return { markdown: `${sections.join('\n\n')}\n`, locations: sections.map((_, index) => ({ kind: 'page', index: index + 1, label: `第 ${index + 1} 页` })), warnings: sections.every(section => !section.replace(/^##[^\n]+/m, '').trim()) ? ['文件可能是扫描件，首版未启用 OCR。'] : [] };
   } finally { await document.destroy(); }
+  // Pages without a text layer are scans or pictures of text.
+  const scanned = texts.flatMap((text, index) => text.trim() ? [] : [index + 1]);
+  const warnings: string[] = [];
+  if (scanned.length) {
+    const recognized = scanned.slice(0, MAX_OCR_PAGES);
+    try {
+      for (const page of await services.ocr.recognizePdfPages(pages, recognized, signal)) texts[page.index - 1] = page.text;
+      warnings.push(`${scanned.length === texts.length ? `全部 ${String(texts.length)} 页` : pageList(scanned)}没有文字层，已用 PaddleOCR（PP-OCRv5 移动版）识别，请核对关键数字与专有名词。`);
+      if (scanned.length > recognized.length) warnings.push(`另有 ${String(scanned.length - recognized.length)} 页超过单个文件 ${String(MAX_OCR_PAGES)} 页的识别上限，未写入检索文本。`);
+      const empty = recognized.filter(index => !texts[index - 1]?.trim());
+      if (empty.length) warnings.push(`${pageList(empty)}未识别到文字。`);
+    } catch (cause) {
+      if (signal?.aborted) throw cause;
+      warnings.push(`文字识别不可用：${cause instanceof Error ? cause.message : String(cause)}；没有文字层的页面未写入检索文本。`);
+    }
+  }
+  const sections = texts.map((text, index) => `## 第 ${index + 1} 页\n\n${text}`);
+  return { markdown: `${sections.join('\n\n')}\n`, locations: sections.map((_, index) => ({ kind: 'page', index: index + 1, label: `第 ${index + 1} 页` })), warnings };
 }
 
-export async function convertToMarkdown(kind: LibraryAssetKind, bytes: Uint8Array, signal?: AbortSignal): Promise<ConversionResult> {
+/**
+ * Count the pages of a PDF.
+ * @param bytes - PDF content; a copy is parsed.
+ * @returns The page count.
+ */
+export async function pdfPageCount(bytes: Uint8Array): Promise<number> {
+  if (new TextDecoder('ascii').decode(bytes.subarray(0, 5)) !== '%PDF-') throw new Error('library/invalid-pdf');
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  let document: Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>;
+  try { document = await pdfjs.getDocument({ data: Uint8Array.from(bytes), useWorkerFetch: false, isEvalSupported: false }).promise; }
+  catch { throw new Error('library/invalid-pdf'); }
+  try { return document.numPages; } finally { await document.destroy(); }
+}
+
+export async function convertToMarkdown(kind: LibraryAssetKind, bytes: Uint8Array, signal?: AbortSignal, services: ConverterServices = defaultConverterServices): Promise<ConversionResult> {
   checkSignal(signal);
   if (kind === 'markdown' || kind === 'text') {
     try { return { markdown: new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/\r\n?/g, '\n'), warnings: [], locations: [] }; }
@@ -131,5 +231,8 @@ export async function convertToMarkdown(kind: LibraryAssetKind, bytes: Uint8Arra
   if (kind === 'docx') return docx(bytes, signal);
   if (kind === 'pptx') return pptx(bytes, signal);
   if (kind === 'html') return html(bytes);
-  return pdf(bytes, signal);
+  if (kind === 'image') return image(bytes, services, signal);
+  if ((ANYDOC_KINDS as readonly LibraryAssetKind[]).includes(kind)) return anydoc(kind, bytes, services, signal);
+  if (kind === 'pdf') return pdf(bytes, services, signal);
+  throw new Error('library/unsupported-format');
 }
