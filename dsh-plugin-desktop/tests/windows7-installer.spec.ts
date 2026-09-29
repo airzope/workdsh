@@ -48,8 +48,15 @@ describe('Windows 7 VxKex NEXT installer integration', () => {
   })
 
   it('builds the offline variant from generated payload definitions', () => {
+    const shared = '!include "${BUILD_RESOURCES_DIR}\\installer.nsh"'
     expect(offlineInstaller).toContain('!include "${BUILD_RESOURCES_DIR}\\.win7\\offline-payload.nsh"')
-    expect(offlineInstaller.indexOf('offline-payload.nsh')).toBeLessThan(offlineInstaller.indexOf('!include "installer.nsh"'))
+    expect(offlineInstaller).toContain(shared)
+    expect(offlineInstaller.indexOf('offline-payload.nsh')).toBeLessThan(offlineInstaller.indexOf(shared))
+  })
+
+  it('includes the WorkDSH installer script by path, not through electron-builder\'s include directory', () => {
+    // electron-builder's own templates/nsis/include/installer.nsh would shadow a bare name.
+    expect(offlineInstaller).not.toMatch(/^!include\s+"installer\.nsh"/mu)
   })
 
   it('removes the registration on uninstall but never during an upgrade', () => {

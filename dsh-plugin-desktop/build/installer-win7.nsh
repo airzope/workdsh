@@ -3,4 +3,6 @@
 ; missing or older. scripts/package-win7.ts stages and verifies them first and
 ; generates their definitions.
 !include "${BUILD_RESOURCES_DIR}\.win7\offline-payload.nsh"
-!include "installer.nsh"
+; electron-builder adds its own include directory, which has another
+; installer.nsh, so the WorkDSH script is included by its full path.
+!include "${BUILD_RESOURCES_DIR}\installer.nsh"
