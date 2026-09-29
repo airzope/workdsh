@@ -302,6 +302,12 @@ jobs:
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+      # The llama.cpp server is built from source in ubuntu:20.04 (the official
+      # Ubuntu builds need glibc 2.34); the cache holds it per pinned input.
+      - uses: actions/cache@v6
+        with:
+          path: dsh-plugin-desktop/build/.workdsh-llama-cache
+          key: llama-linux-${{ matrix.arch }}-${{ hashFiles('dsh-plugin-desktop/scripts/build-llama-linux.sh', 'dsh-plugin-desktop/scripts/prepare-workdsh-llama.ts') }}
       - name: Package Ubuntu through the single release script
         timeout-minutes: 70
         run: node scripts/package-desktop-release.mjs --source=${{ github.ref_type == 'tag' && 'published' || 'local' }}
@@ -430,6 +436,7 @@ jobs:
           - 现有插件页可直接发现 DSH 社区插件，并打开第三方 dsh-market 目录进行搜索和安装。
           - Desktop 使用锁定的官方 DSH 0.2.0-rc.1 Profile；内置 Node.js 和 Python，不额外打包浏览器。
           - 内置 FFmpeg 8.1.2 与 FFprobe（GPLv3，作为独立程序运行）：可在对话中转换、压缩、无损剪辑、合并音视频并提取音频；对应源码见安装目录 media/SOURCES.md 与本版本附带的源码归档。
+          - 内置 llama.cpp（b11247）本地模型服务：把 GGUF 模型文件放进用户数据目录下的 models 文件夹，几秒后即可在模型列表中选择“本地模型 (llama.cpp)”，无需联网或 API 密钥。服务仅监听本机回环地址，并使用每次启动随机生成的密钥。Windows 版可用 Vulkan 调用显卡，macOS Apple Silicon 使用 Metal。
           - 提供 Windows x64 安装包，以及 macOS Intel x64、Apple Silicon arm64 未签名 DMG（macOS 15 及以上，分别在对应架构的 macOS 15 上构建并验证）。
           - 提供 Ubuntu 20.04 及以上 x64（amd64）与 arm64 的 .deb 安装包，内置 Node.js、Python 与办公技能，并在 Ubuntu 20.04 与 24.04 中安装验证。
           - 提供 Windows 7 SP1 x64 全量离线安装包：内置 VxKex NEXT 1.2.3.2463 与 Microsoft VC++ 运行库，缺失时自动安装；Windows 7 支持为尽力支持。

@@ -16,7 +16,7 @@ The Desktop Profile bundles two separate third-party plugins:
 - [`@cocofhu/skillhub`](https://www.npmjs.com/package/@cocofhu/skillhub)
   version 0.2.16 for SkillHub integration. Source and MIT license:
   <https://github.com/cocofhu/skillhub>.
-- [`dshmarket`](https://www.npmjs.com/package/dshmarket) version 1.66.1 for
+- [`dshmarket`](https://www.npmjs.com/package/dshmarket) version 1.66.5 for
   DSH community plugin discovery. Source and MIT license:
   <https://github.com/dsh-market/dsh-market>.
 
@@ -77,6 +77,31 @@ license text (`COPYING.GPLv3`) and `SOURCES.md`, which lists the exact
 upstream source of every component. Each Desktop release attaches
 `ffmpeg-8.1.2-corresponding-source.tar.gz`, which
 `scripts/pack-ffmpeg-sources.ts` assembles from exactly those sources.
+
+Every installer includes `workdsh-runtime/llama`: the `llama-server` of
+[llama.cpp](https://github.com/ggml-org/llama.cpp) `b11247` (commit
+`0bc845d356f437d5ce4fe975c36428f7522829cb`) with the ggml libraries it loads,
+MIT License. It also contains, each under the license text shipped next to it:
+
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib), MIT License;
+- [nlohmann/json](https://github.com/nlohmann/json), MIT License;
+- [xxHash](https://github.com/Cyan4973/xxHash), BSD 2-Clause License;
+- the rotate-bits header (MIT License) and the public-domain SHA-1 and SHA-256
+  code in llama.cpp's `vendor/hash`;
+- [stb_image](https://github.com/nothings/stb), [miniaudio](https://github.com/mackron/miniaudio)
+  and [subprocess.h](https://github.com/sheredom/subprocess.h), public domain.
+
+The Windows and macOS builds are llama.cpp's official release archives. They
+also link BoringSSL (OpenSSL and ISC licenses) and embed llama.cpp's web UI,
+which WorkDSH does not serve (`--no-webui`). The Windows build is the Vulkan
+build and carries the LLVM OpenMP runtime `libomp.dll` (Apache License 2.0 with
+LLVM Exceptions, `LICENSE-LLVM-OpenMP`). Next to it are `msvcp140.dll`,
+`vcruntime140.dll` and `vcruntime140_1.dll` 14.44.35112, unmodified Microsoft
+Visual C++ runtime files redistributed under the Microsoft Software License
+Terms for Visual Studio, taken from the `msvc-runtime` 14.44.35112 wheel and
+pinned by SHA-256. The Ubuntu builds are compiled by WorkDSH from the same
+commit in `ubuntu:20.04` (`scripts/build-llama-linux.sh`) without OpenSSL,
+OpenMP or the web UI.
 
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.

@@ -32,7 +32,7 @@ const fetchBytes = async (url: string): Promise<Buffer> => Buffer.from(url.slice
 const release: LlamaRelease = {
   ...LLAMA_RELEASE,
   targets: {
-    'win32-x64': { kind: 'release', archive: file('llama-win.zip'), root: '', accelerator: 'cpu+vulkan' },
+    'win32-x64': { kind: 'release', archive: file('llama-win.zip'), root: '', accelerator: 'cpu+vulkan', archiveLicenses: ['LICENSE-LLVM-OpenMP'] },
     'darwin-arm64': { kind: 'release', archive: file('llama-mac.tar.gz'), root: 'llama-b11247', accelerator: 'cpu+metal' },
     'linux-x64': { kind: 'build', cmake: file('cmake.tar.gz'), accelerator: 'cpu' },
   },
@@ -125,7 +125,7 @@ describe('llama.cpp staging', () => {
     const extract = (archive: string, destination: string): void => {
       mkdirSync(destination, { recursive: true })
       if (archive.endsWith('llama-win.zip')) {
-        for (const name of ['llama-server.exe', 'ggml-cpu-x64.dll', 'ggml-rpc.dll', 'llama-cli.exe']) writeFileSync(join(destination, name), name)
+        for (const name of ['llama-server.exe', 'ggml-cpu-x64.dll', 'ggml-rpc.dll', 'llama-cli.exe', 'LICENSE-LLVM-OpenMP']) writeFileSync(join(destination, name), name)
       } else {
         const scripts = join(destination, release.vcRuntime.directory)
         mkdirSync(scripts, { recursive: true })
@@ -138,13 +138,17 @@ describe('llama.cpp staging', () => {
     })
     expect(readdirSync(join(llama, 'bin')).sort()).toEqual(['ggml-cpu-x64.dll', 'llama-server.exe', 'msvcp140.dll', 'vcruntime140.dll'])
     const manifest = JSON.parse(readFileSync(join(llama, 'manifest.json'), 'utf8'))
-    expect(manifest).toMatchObject({ target: 'win32-x64', server: 'bin/llama-server.exe', vcRuntime: '14.44.35112' })
+    expect(manifest).toMatchObject({ target: 'win32-x64', server: 'bin/llama-server.exe', vcRuntime: '14.44.35112', licenses: ['LICENSE', 'LICENSE-LLVM-OpenMP'] })
+    expect(readFileSync(join(llama, 'LICENSE-LLVM-OpenMP'), 'utf8')).toBe('LICENSE-LLVM-OpenMP')
   })
 
   it('rejects a VC++ runtime DLL that does not match its pin', async () => {
     const extract = (archive: string, destination: string): void => {
       mkdirSync(destination, { recursive: true })
-      if (archive.endsWith('llama-win.zip')) writeFileSync(join(destination, 'llama-server.exe'), 'server')
+      if (archive.endsWith('llama-win.zip')) {
+        writeFileSync(join(destination, 'llama-server.exe'), 'server')
+        writeFileSync(join(destination, 'LICENSE-LLVM-OpenMP'), 'license')
+      }
       else {
         const scripts = join(destination, release.vcRuntime.directory)
         mkdirSync(scripts, { recursive: true })

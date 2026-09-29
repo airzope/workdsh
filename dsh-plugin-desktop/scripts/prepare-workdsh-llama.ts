@@ -26,7 +26,14 @@ export interface LlamaAsset {
 
 /** How one target obtains llama-server. */
 export type LlamaTarget =
-  | { readonly kind: 'release', readonly archive: LlamaAsset, readonly root: string, readonly accelerator: string }
+  | {
+    readonly kind: 'release'
+    readonly archive: LlamaAsset
+    readonly root: string
+    readonly accelerator: string
+    /** License texts the archive itself carries for what it bundles. */
+    readonly archiveLicenses?: readonly string[]
+  }
   | { readonly kind: 'build', readonly cmake: LlamaAsset, readonly accelerator: string }
 
 /** A pinned llama.cpp release for every Desktop target. */
@@ -68,6 +75,8 @@ export const LLAMA_RELEASE: LlamaRelease = {
       archive: { url: `${RELEASES}llama-b11247-bin-win-vulkan-x64.zip`, sha256: '2b5f479629fea7d33fdec232a67284fa0265ebcb5e4e42e5519cf13d001c8552' },
       root: '',
       accelerator: 'cpu+vulkan',
+      // For libomp.dll, which the CPU backends load.
+      archiveLicenses: ['LICENSE-LLVM-OpenMP'],
     },
     'darwin-arm64': {
       kind: 'release',
@@ -95,6 +104,10 @@ export const LLAMA_RELEASE: LlamaRelease = {
   licenses: {
     'LICENSE': { url: `${RAW}LICENSE`, sha256: '94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d' },
     'LICENSE-jsonhpp': { url: `${RAW}licenses/LICENSE-jsonhpp`, sha256: 'c0d068392ea65358b798b8c165103560f06e9e3b38c4ab4e2d8810a7b931af86' },
+    'LICENSE-cpp-httplib': { url: `${RAW}vendor/cpp-httplib/LICENSE`, sha256: '4b45cbe16d7b71b89ae6127e26e0d90a029198ca5e958ad8e3d0b8bbed364d8b' },
+    'LICENSE-xxhash': { url: `${RAW}vendor/hash/xxhash/LICENSE`, sha256: '6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a' },
+    'LICENSE-sha256': { url: `${RAW}vendor/hash/sha256/LICENSE`, sha256: 'b81d0022ca6367918c67b57e9647d3513ee58809fd4b0ef0b3492f1356bced25' },
+    'LICENSE-rotate-bits': { url: `${RAW}vendor/hash/rotate-bits/LICENSE.md`, sha256: 'ca0b44aec101afb6b46f4c39b23369fa06a64fb9c0add37c2689d702156fee55' },
   },
   vcRuntime: {
     version: '14.44.35112',
@@ -318,6 +331,15 @@ export async function prepareWorkdshLlama(options: LlamaPrepareOptions): Promise
     const source = await preparePinnedAsset(pinnedLicense, join(options.desktopRoot, 'build', '.workdsh-llama-cache', release.version, 'licenses', name), fetchBytes)
     copyFileSync(source, join(llama, name))
     licenses.push(name)
+  }
+
+  if (pinned.kind === 'release') {
+    for (const name of pinned.archiveLicenses ?? []) {
+      const source = join(unpacked, name)
+      if (!existsSync(source)) throw new Error(`llama.cpp ${release.version} (${target}) archive lacks ${name}`)
+      copyFileSync(source, join(llama, name))
+      licenses.push(name)
+    }
   }
 
   const reported = (options.serverVersion ?? nativeServerVersion)(join(bin, llamaServerName(options.platform)))
