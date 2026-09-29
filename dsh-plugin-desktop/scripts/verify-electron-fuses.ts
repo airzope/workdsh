@@ -75,6 +75,14 @@ export function smokeBundledWorkdshProfile(context: PackagedRuntimeContext): voi
     throw new Error(`Bundled FFmpeg smoke failed: ${String(media.error ?? media.stderr)}`)
   }
   console.log(media.stdout.trim())
+  const llama = spawnSync(node, [
+    fileURLToPath(new URL('./smoke-llama.mjs', import.meta.url)),
+    join(runtime, 'llama'),
+  ], { encoding: 'utf8', timeout: 300_000 })
+  if (llama.error || llama.status !== 0) {
+    throw new Error(`Bundled llama.cpp smoke failed: ${String(llama.error ?? `${llama.stdout}${llama.stderr}`)}`)
+  }
+  console.log(llama.stdout.trim())
 }
 
 /** Injectable official fuse reader used by focused tests. */

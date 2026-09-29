@@ -32,7 +32,7 @@ await writeFile(join(destination, "release-manifest.json"), JSON.stringify({
   name: manifest.name,
   version: manifest.version,
   scope: manifest.workdshRelease.scope,
-  harness: "0.1.7-rc.2",
+  harness: "0.2.0-rc.1",
   filename,
   sha256,
   bytes: bytes.length,

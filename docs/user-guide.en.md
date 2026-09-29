@@ -27,6 +27,25 @@ The installers bundle FFmpeg and FFprobe. Describe what you need in the conversa
 - Compression defaults to H.264/AAC MP4 for the widest compatibility; you can also compress to a target size, a lower resolution, or H.265.
 - Commands run through the conversation's command tool, under your current permission and sandbox settings. All processing happens offline on your computer.
 
+## Local models
+
+The installers bundle the llama.cpp model server, so you can run open models offline and without an API key:
+
+1. Download a model in GGUF format (`*.gguf`), for example a quantized Qwen, Llama, or Gemma model.
+2. Put it in the models folder, which is created at first launch and contains a short note:
+   - Windows: `%APPDATA%\WorkDSH\models`
+   - macOS: `~/Library/Application Support/WorkDSH/models`
+   - Ubuntu: `~/.config/WorkDSH/models`
+3. Within seconds, choose "本地模型 (llama.cpp)" in the model list and pick the model named after the file.
+
+- Each file is one model. Put a multimodal model (with its `mmproj` file) or a multi-part model in its own subfolder; the model is named after the folder.
+- On Windows, name model files and subfolders with English letters, digits, `-`, `_` and `.` only: the bundled llama.cpp cannot open file names with Chinese or other non-ASCII characters there. This does not apply to the path of the models folder itself.
+- A model loads on first use, one at a time, and unloads after ten idle minutes to free memory. It needs somewhat more memory than the file's size.
+- Each model gets a 32K context by default, capped at its trained length. To change the context, GPU layers, or other settings, create `presets.ini` in the models folder in llama.cpp's router preset format; the default no longer applies once that file exists.
+- The Windows build uses the GPU when a Vulkan driver is installed, and Apple silicon Macs use Metal; Intel Macs and the Ubuntu builds use the CPU.
+- The server listens only on the loopback address, with a key generated at each launch. Its log is `llama/server.log`, next to the models folder.
+- Tool use depends on the model; smaller models may not complete multi-step tasks reliably.
+
 ## Data and plugins
 
 Runtime data lives in a DSH home under the local application-data directory. The installer contains the pinned Profile dependencies; the Electron carrier does not install a second DSH npm tree into `app.asar`. Models and external tools may access the network according to user configuration.

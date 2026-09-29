@@ -1,3 +1,8 @@
+## 0.1.0-alpha.55 — 2026-09-29
+
+- 按官方 DSH 0.2.0-rc.1 的公开接口重新打包，精确依赖同步更新。
+- 新增 `workdsh-bundle/local-models`：Desktop 启动的 llama.cpp 路由服务所提供的 GGUF 模型，会同步为 `llm-pi-ai` 的 `llama-local` 路由（本地模型）。模型文件夹中新增或删除文件后几秒内生效，无需重启；上下文窗口取模型训练长度与服务上下文中的较小值。未设置 `WORKDSH_LLAMA_BASE_URL` 时不启用。
+
 ## 0.1.0-alpha.54 — 2026-09-29
 
 - 白牌：Host 读取 Desktop 载体传入的 `WORKDSH_BRAND_NAME` 与 `WORKDSH_BRAND_MARK`，在 `/api/workdsh-brand` 提供产品名称与标志；侧栏品牌、页面标题和浏览器提示词随之显示。未设置时仍为 WorkDSH。

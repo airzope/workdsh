@@ -17,6 +17,16 @@ import { release } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brandEnvironment, readPackagedBrand } from './brand.ts'
+import {
+  ensureModelsDirectory,
+  freeLoopbackPort,
+  llamaExecutable,
+  llamaRuntimeEnvironment,
+  planLlamaServer,
+  startLlamaServer,
+  stopLlamaServer,
+  waitForLlamaServer,
+} from './llama.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
@@ -26,6 +36,7 @@ const brand = readPackagedBrand(BRAND_DIRECTORY)
 const READY_PATTERN = /dsh web:\s+(http:\/\/127\.0\.0\.1:\d+\/?\?token=[^\s]+)/u
 
 let runtime: ChildProcess | undefined
+let llama: ChildProcess | undefined
 let window: BrowserWindow | undefined
 let quitting = false
 
@@ -63,6 +74,50 @@ function bundledMediaTools(): string {
   const overridden = process.env.WORKDSH_MEDIA_TOOLS
   if (overridden !== undefined && overridden.length > 0) return overridden
   return join(process.resourcesPath, 'workdsh-runtime', 'media')
+}
+
+function bundledLlama(): string {
+  const overridden = process.env.WORKDSH_LLAMA
+  if (overridden !== undefined && overridden.length > 0) return overridden
+  return join(process.resourcesPath, 'workdsh-runtime', 'llama')
+}
+
+function modelsDirectory(): string {
+  const overridden = process.env.WORKDSH_MODELS_DIR
+  if (overridden !== undefined && overridden.length > 0) return overridden
+  return join(app.getPath('userData'), 'models')
+}
+
+/**
+ * Start the local model server for the models folder.
+ * @returns Variables for the runtime, or none when the server is unavailable.
+ */
+async function startLocalModels(): Promise<Record<string, string>> {
+  const state = join(app.getPath('userData'), 'llama')
+  const logFile = join(state, 'server.log')
+  try {
+    const executable = llamaExecutable(bundledLlama())
+    if (executable === undefined) return {}
+    const models = modelsDirectory()
+    ensureModelsDirectory(models, brand.name)
+    const plan = planLlamaServer({ executable, modelsDirectory: models, stateDirectory: state, port: await freeLoopbackPort(), env: process.env })
+    const child = startLlamaServer(plan, logFile)
+    llama = child
+    child.once('error', cause => process.stderr.write(`WorkDSH local model server failed: ${String(cause)}\n`))
+    child.once('exit', code => {
+      if (llama === child) llama = undefined
+      if (!quitting) process.stderr.write(`WorkDSH local model server exited (${String(code)}); see ${logFile}\n`)
+    })
+    if (!(await waitForLlamaServer(plan.baseURL, child))) {
+      stopLlamaServer(child)
+      process.stderr.write(`WorkDSH local models are unavailable: llama-server did not start; see ${logFile}\n`)
+      return {}
+    }
+    return llamaRuntimeEnvironment(plan, models)
+  } catch (cause) {
+    process.stderr.write(`WorkDSH local models are unavailable: ${String(cause)}\n`)
+    return {}
+  }
 }
 
 function browserWorkerRequest(): { port: number, profile: string } | undefined {
@@ -171,7 +226,7 @@ function openWindow(url: string): void {
   window.on('closed', () => { window = undefined })
 }
 
-function startRuntime(home: string, profileDir: string): void {
+function startRuntime(home: string, profileDir: string, localModels: Record<string, string>): void {
   const cli = join(profileDir, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   if (!existsSync(cli)) throw new Error(`Bundled WorkDSH launcher is missing: ${cli}`)
   const executable = bundledNodeExecutable()
@@ -185,6 +240,7 @@ function startRuntime(home: string, profileDir: string): void {
       DSH_ELECTRON_EXECUTABLE: process.execPath,
       ...brandEnvironment(brand, BRAND_DIRECTORY),
       WORKDSH_MEDIA_TOOLS: bundledMediaTools(),
+      ...localModels,
       ELECTRON_RUN_AS_NODE: undefined,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -219,6 +275,8 @@ function stopRuntime(): void {
   quitting = true
   if (runtime !== undefined && runtime.exitCode === null) runtime.kill('SIGTERM')
   runtime = undefined
+  if (llama !== undefined) stopLlamaServer(llama)
+  llama = undefined
 }
 
 // Browser workers are the same executable, so they take the same policy.
@@ -253,10 +311,10 @@ if (!app.requestSingleInstanceLock()) {
       app.quit()
     }
   })
-  void app.whenReady().then(() => {
+  void app.whenReady().then(async () => {
     const home = runtimeHome()
     const profile = materializeRuntimeProfile(home)
-    startRuntime(home, profile)
+    startRuntime(home, profile, await startLocalModels())
   }).catch(cause => {
     process.stderr.write(`WorkDSH failed to start: ${cause instanceof Error ? cause.stack ?? cause.message : String(cause)}\n`)
     app.quit()

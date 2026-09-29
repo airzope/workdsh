@@ -83,6 +83,8 @@ function application(): string {
   // Static FFmpeg builds need no versioned glibc symbols.
   write(join(runtime, 'media', 'bin', 'ffmpeg'), elf([]))
   write(join(runtime, 'media', 'bin', 'ffprobe'), elf([]))
+  // WorkDSH builds llama.cpp against focal's glibc and libstdc++.
+  write(join(runtime, 'llama', 'bin', 'llama-server'), elf(['GLIBC_2.29', 'GLIBCXX_3.4.26']))
   return root
 }
 
@@ -121,8 +123,8 @@ describe('Linux package audit', () => {
     expect(report.missingOfflineFiles).toEqual([])
     expect(report.wrongArchitecture).toEqual([])
     expect(report.tooNew).toEqual({})
-    expect(report.images).toBe(6)
-    expect(report.newest).toEqual({ GLIBC: '2.28', GLIBCXX: '3.4.21', CXXABI: '1.3.11' })
+    expect(report.images).toBe(7)
+    expect(report.newest).toEqual({ GLIBC: '2.29', GLIBCXX: '3.4.26', CXXABI: '1.3.11' })
     expect(report.otherArchitectures).toEqual([join('resources', 'prebuilds', 'linux-arm64', 'addon.node')])
     expect(() => assertLinuxPayload(report)).not.toThrow()
   })

@@ -53,6 +53,7 @@ const runtimeEnv = { ...process.env, WORKDSH_USE_LOCAL_RELEASE: source === 'loca
 run('Prepare the single WorkDSH DSH Profile', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-runtime'], { env: runtimeEnv })
 run('Prepare bundled Python and Node.js', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-primary-runtime'], { env: runtimeEnv })
 run('Prepare bundled FFmpeg', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-media'], { env: runtimeEnv })
+run('Prepare bundled llama.cpp server', corepack, ['yarn', 'workspace', 'dsh-plugin-desktop', 'prepare:workdsh-llama'], { env: runtimeEnv })
 run('Build the Desktop installer', process.execPath, [join(root, 'dsh-plugin-desktop', 'scripts', packageScript)], {
   env: { ...runtimeEnv, DSH_PACKAGE_CHECK_ALREADY_RAN: '1' },
 })

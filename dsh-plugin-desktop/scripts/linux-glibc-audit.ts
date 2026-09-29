@@ -126,6 +126,9 @@ export const LINUX_OFFLINE_FILES = [
   'media/manifest.json',
   'media/bin/ffmpeg',
   'media/bin/ffprobe',
+  'llama/manifest.json',
+  'llama/LICENSE',
+  'llama/bin/llama-server',
   'package-cache/release-manifest.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
@@ -174,6 +177,7 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
     'resources/workdsh-runtime/primary-runtime/dependencies/python/bin/python3',
     'resources/workdsh-runtime/media/bin/ffmpeg',
     'resources/workdsh-runtime/media/bin/ffprobe',
+    'resources/workdsh-runtime/llama/bin/llama-server',
   ].filter((path) => {
     const absolute = join(application, path)
     return existsSync(absolute) && readElfVersionNeeds(absolute)?.machine !== expected
