@@ -22,6 +22,7 @@ Status: implemented
 
 ## Server settings
 
+- **工作目录：**服务在模型文件夹中运行，以 `--models-dir .` 服务该文件夹；预设文件路径在为 ASCII 时改用相对该文件夹的路径。llama.cpp 在 Windows 上通过 ANSI 代码页检查这些路径，因此非 ASCII 的绝对路径（例如以中文命名的用户目录）会找不到。模型进程继承该工作目录，Profile 按它解析路由服务列出的相对模型路径。
 - **路由参数：**`--models-max 1`、`--sleep-idle-seconds 600`、`--no-webui` 与 `--offline`。模型在首次使用时加载，同一时间只加载一个，闲置十分钟后卸载。
 - **密钥：**通过 `LLAMA_API_KEY` 传入。若改用 `--api-key`，路由服务启动的模型进程将不受保护。
 - **上下文：**路由服务的模型进程不读取 `LLAMA_ARG_*` 变量，因此默认的 32K 上下文由生成的路由预设（`[*] c = 32768`）提供。用户的 `models/presets.ini` 会取代它。
@@ -52,6 +53,7 @@ Windows 安装包不安装 VC++ 运行库，因此服务旁放有 14.44.35112 �
 ## Limits
 
 - **Windows 7：**本地模型为尽力支持，因为上述 VC++ 搭配尚未在真实的 Windows 7 上运行过。
+- **Windows 文件名：**Windows 上模型文件名与子文件夹名必须是 ASCII。llama.cpp 通过 ANSI 代码页列出它们，其他名称无法提供服务。模型文件夹中的说明与用户指南都写明了这一点。
 - **Linux GPU：**Ubuntu 构建只用 CPU。Vulkan 需要比 focal 更新的着色器工具。
 - **工具调用：**取决于各模型的对话模板。
 - **升级：**标签、提交、归档哈希与许可证哈希必须一起更新；重新运行各审计，并在两种架构上构建 Linux 版本。

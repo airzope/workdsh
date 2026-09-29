@@ -2,6 +2,7 @@ import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-settings';
 import { watch, type FSWatcher } from 'node:fs';
 import { open } from 'node:fs/promises';
+import { isAbsolute, resolve } from 'node:path';
 
 /**
  * Keep one `llm-pi-ai` provider route in step with a llama.cpp router server:
@@ -153,9 +154,11 @@ export function presetContextSize(preset: string | undefined): number | undefine
 /**
  * Read a router's `/v1/models` listing.
  * @param listing - Response body.
+ * @param modelsDir - The router's working folder: Desktop serves the models
+ *   folder as `.`, so model paths in the listing are relative to it.
  * @returns Models sorted by id.
  */
-export function routerModels(listing: unknown): RouterModel[] {
+export function routerModels(listing: unknown, modelsDir?: string): RouterModel[] {
   const data = (listing as { data?: unknown } | undefined)?.data;
   if (!Array.isArray(data)) return [];
   const models: RouterModel[] = [];
@@ -166,9 +169,11 @@ export function routerModels(listing: unknown): RouterModel[] {
     const modelFlag = args.findIndex(arg => arg === '--model' || arg === '-m');
     const modalities = (item.architecture as { input_modalities?: unknown } | undefined)?.input_modalities;
     const presetContext = presetContextSize(typeof status?.preset === 'string' ? status.preset : undefined);
+    const listed = modelFlag >= 0 ? args[modelFlag + 1] : undefined;
+    const path = listed !== undefined && !isAbsolute(listed) && modelsDir ? resolve(modelsDir, listed) : listed;
     models.push({
       id: item.id,
-      ...(modelFlag >= 0 && args[modelFlag + 1] !== undefined ? { path: args[modelFlag + 1] } : {}),
+      ...(path !== undefined ? { path } : {}),
       ...(presetContext === undefined ? {} : { presetContext }),
       input: Array.isArray(modalities) && modalities.includes('image') ? ['text', 'image'] : ['text'],
     });
@@ -269,7 +274,7 @@ export function apply(ctx: Context, config: Config = {}): void {
       signal: AbortSignal.timeout(30_000),
     });
     if (!response.ok) throw new Error(`${baseURL}/models returned ${String(response.status)}`);
-    const models = routerModels(await response.json());
+    const models = routerModels(await response.json(), config.modelsDir);
     const profiles: LocalModelProfile[] = [];
     for (const model of models) profiles.push(localModelProfile(model, await trainedLength(model.path), contextSize));
     if (stopped) return;
@@ -292,15 +297,16 @@ export function apply(ctx: Context, config: Config = {}): void {
     synced = true;
   };
 
-  const sync = (): void => {
-    if (stopped) return;
-    if (running !== undefined) { again = true; return; }
+  const sync = (): Promise<void> => {
+    if (stopped) return Promise.resolve();
+    if (running !== undefined) { again = true; return running; }
     running = syncOnce()
       .catch((error: unknown) => { if (!stopped) ctx.logger.warn(`workdsh-local-models: ${String(error instanceof Error ? error.message : error)}`); })
       .finally(() => {
         running = undefined;
-        if (again) { again = false; sync(); }
+        if (again) { again = false; void sync(); }
       });
+    return running;
   };
 
   ctx.effect(() => {
@@ -310,7 +316,7 @@ export function apply(ctx: Context, config: Config = {}): void {
       try {
         watcher = watch(config.modelsDir, () => {
           clearTimeout(debounce);
-          debounce = setTimeout(sync, 1_500);
+          debounce = setTimeout(() => { void sync(); }, 1_500);
         });
         watcher.on('error', () => watcher?.close());
       } catch (error) {
@@ -318,11 +324,13 @@ export function apply(ctx: Context, config: Config = {}): void {
       }
     }
     // Poll quickly until the first sync lands (the server and the adapter
-    // entry may still be starting), then slowly as a watcher fallback.
+    // entry may still be starting), then slowly as a watcher fallback. Each
+    // delay is chosen once the previous sync has finished.
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = (): void => {
-      sync();
-      timer = setTimeout(tick, synced ? config.intervalMs ?? 30_000 : 2_000);
+      void sync().then(() => {
+        if (!stopped) timer = setTimeout(tick, synced ? config.intervalMs ?? 30_000 : 2_000);
+      });
     };
     tick();
     return () => {

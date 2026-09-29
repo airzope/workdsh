@@ -9,7 +9,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 
 /** Context size each model gets unless the user's presets set one. */
 export const LLAMA_CONTEXT_SIZE = 32_768
@@ -21,6 +21,8 @@ export const USER_PRESETS = 'presets.ini'
 /** How to start the server. */
 export interface LlamaServerPlan {
   readonly executable: string
+  /** Working directory: the models folder, which model processes inherit. */
+  readonly cwd: string
   readonly args: readonly string[]
   readonly env: Readonly<Record<string, string | undefined>>
   readonly baseURL: string
@@ -38,7 +40,8 @@ export function llamaExecutable(llamaDirectory: string): string | undefined {
   if (!existsSync(manifestPath)) return undefined
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { server?: unknown }
   if (typeof manifest.server !== 'string' || !/^bin\/llama-server(?:\.exe)?$/u.test(manifest.server)) return undefined
-  const executable = join(llamaDirectory, manifest.server)
+  // Absolute, because the server starts in the models folder.
+  const executable = resolve(llamaDirectory, manifest.server)
   return existsSync(executable) ? executable : undefined
 }
 
@@ -49,6 +52,7 @@ export function modelsReadme(productName: string): string {
     '',
     '把 GGUF 模型文件（*.gguf）放在这里，几秒后即可在“模型”中选择“本地模型 (llama.cpp)”。',
     '一个文件对应一个模型，模型名为文件名；多模态模型或分卷模型可以各放在一个子文件夹中，模型名为子文件夹名。',
+    'Windows 上的模型文件名和子文件夹名请只用英文字母、数字、“-”、“_”和“.”。',
     `模型在首次使用时加载，闲置 ${String(LLAMA_IDLE_SECONDS / 60)} 分钟后卸载。每个模型的默认上下文为 ${String(LLAMA_CONTEXT_SIZE)}，`,
     '且不超过模型的训练长度；可在本文件夹的 presets.ini 中按 llama.cpp 的路由预设格式调整。',
     '',
@@ -56,6 +60,7 @@ export function modelsReadme(productName: string): string {
     '',
     'Put GGUF model files (*.gguf) here; within seconds they appear under "本地模型 (llama.cpp)" in the model list.',
     'Each file is one model named after the file; put a multimodal or multi-part model in its own subfolder, named after the folder.',
+    'On Windows, name model files and subfolders with English letters, digits, "-", "_" and "." only.',
     `A model loads on first use and unloads after ${String(LLAMA_IDLE_SECONDS / 60)} idle minutes. Each gets a ${String(LLAMA_CONTEXT_SIZE)}-token context,`,
     'capped at its trained length; override this in presets.ini here, using llama.cpp router presets.',
     '',
@@ -84,6 +89,19 @@ export function defaultPresets(contextSize: number): string {
 }
 
 /**
+ * A path llama.cpp can open on every platform. On Windows it checks folder
+ * and preset paths through the ANSI code page, so a non-ASCII path (a user
+ * profile named in Chinese, say) is not found; the server therefore runs in
+ * the models folder and gets paths relative to it when those are ASCII.
+ * @param path - Absolute path.
+ * @param cwd - The server's working directory.
+ */
+export function serverPath(path: string, cwd: string): string {
+  const fromCwd = relative(cwd, path) || '.'
+  return !isAbsolute(fromCwd) && /^[\x20-\x7e]*$/u.test(fromCwd) ? fromCwd : path
+}
+
+/**
  * Plan the server launch.
  * @param options - Executable, folders, port, key and base environment.
  * @returns The plan; the default presets file is written when used.
@@ -107,11 +125,12 @@ export function planLlamaServer(options: {
   const apiKey = options.apiKey ?? randomBytes(24).toString('base64url')
   return {
     executable: options.executable,
+    cwd: options.modelsDirectory,
     args: [
       '--host', '127.0.0.1',
       '--port', String(options.port),
-      '--models-dir', options.modelsDirectory,
-      '--models-preset', presets,
+      '--models-dir', '.',
+      '--models-preset', serverPath(presets, options.modelsDirectory),
       '--models-max', '1',
       '--sleep-idle-seconds', String(LLAMA_IDLE_SECONDS),
       '--no-webui',
@@ -164,6 +183,7 @@ export function freeLoopbackPort(): Promise<number> {
 export function startLlamaServer(plan: LlamaServerPlan, logFile: string): ChildProcess {
   const log = openSync(logFile, 'w')
   return spawn(plan.executable, [...plan.args], {
+    cwd: plan.cwd,
     env: plan.env,
     stdio: ['ignore', log, log],
     // Its own process group, so stopping it also stops the model processes.

@@ -13,6 +13,7 @@ import {
   llamaRuntimeEnvironment,
   modelsReadme,
   planLlamaServer,
+  serverPath,
   stopLlamaServer,
   waitForLlamaServer,
 } from '../src/llama.ts'
@@ -60,8 +61,9 @@ describe('local model server', () => {
     const plan = planLlamaServer({
       executable: '/app/llama/bin/llama-server', modelsDirectory: models, stateDirectory: join(root, 'state'), port: 18080, apiKey: 'k', env: { PATH: '/bin' },
     })
+    expect(plan.cwd).toBe(models)
     expect(plan.args).toEqual([
-      '--host', '127.0.0.1', '--port', '18080', '--models-dir', models, '--models-preset', join(root, 'state', 'presets.ini'),
+      '--host', '127.0.0.1', '--port', '18080', '--models-dir', '.', '--models-preset', join('..', 'state', 'presets.ini'),
       '--models-max', '1', '--sleep-idle-seconds', '600', '--no-webui', '--offline',
     ])
     expect(plan.args).not.toContain('k')
@@ -83,9 +85,21 @@ describe('local model server', () => {
     const first = planLlamaServer(options)
     const second = planLlamaServer(options)
     expect(first.presets).toBe(join(root, 'presets.ini'))
+    expect(first.args).toContain('presets.ini')
     expect(existsSync(join(root, '.state', 'presets.ini'))).toBe(false)
     expect(first.apiKey).toMatch(/^[\w-]{32}$/u)
     expect(second.apiKey).not.toBe(first.apiKey)
+  })
+
+  it('passes llama.cpp ASCII paths relative to the models folder when it can', () => {
+    const base = join(tmpdir(), '张三', 'WorkDSH')
+    const models = join(base, 'models')
+    expect(serverPath(models, models)).toBe('.')
+    expect(serverPath(join(models, 'presets.ini'), models)).toBe('presets.ini')
+    expect(serverPath(join(base, 'llama', 'presets.ini'), models)).toBe(join('..', 'llama', 'presets.ini'))
+    // A relative path that is not ASCII gains nothing, so the absolute path stays.
+    const elsewhere = join(tmpdir(), '模型设置', 'presets.ini')
+    expect(serverPath(elsewhere, models)).toBe(elsewhere)
   })
 
   it('waits for health and gives up when the server exits', async () => {

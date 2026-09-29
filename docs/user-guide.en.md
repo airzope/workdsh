@@ -39,6 +39,7 @@ The installers bundle the llama.cpp model server, so you can run open models off
 3. Within seconds, choose "本地模型 (llama.cpp)" in the model list and pick the model named after the file.
 
 - Each file is one model. Put a multimodal model (with its `mmproj` file) or a multi-part model in its own subfolder; the model is named after the folder.
+- On Windows, name model files and subfolders with English letters, digits, `-`, `_` and `.` only: the bundled llama.cpp cannot open file names with Chinese or other non-ASCII characters there. This does not apply to the path of the models folder itself.
 - A model loads on first use, one at a time, and unloads after ten idle minutes to free memory. It needs somewhat more memory than the file's size.
 - Each model gets a 32K context by default, capped at its trained length. To change the context, GPU layers, or other settings, create `presets.ini` in the models folder in llama.cpp's router preset format; the default no longer applies once that file exists.
 - The Windows build uses the GPU when a Vulkan driver is installed, and Apple silicon Macs use Metal; Intel Macs and the Ubuntu builds use the CPU.

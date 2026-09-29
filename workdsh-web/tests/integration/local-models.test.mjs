@@ -71,6 +71,9 @@ test('turns the router listing into model entries sized to what the router serve
   assert.equal(localModelProfile(models[0], 131_072, 32_768).maxTokens, 2048);
   assert.equal(presetContextSize('ctx-size = 16384'), 16_384);
   assert.equal(presetContextSize('model = /m/x.gguf'), undefined);
+  const relative = routerModels(listing([{ id: 'served-here', path: './served-here.gguf' }]), '/data/模型');
+  assert.equal(relative[0].path, join('/data/模型', 'served-here.gguf'));
+  assert.equal(routerModels(listing([{ id: 'x', path: './x.gguf' }]))[0].path, './x.gguf');
   assert.deepEqual(routerModels({ data: [{ id: '' }, {}, 'x'] }), []);
   assert.deepEqual(routerModels(undefined), []);
 });
@@ -91,7 +94,8 @@ test('compares only the fields the route sets', () => {
 test('keeps the pi-ai route in step with the router and needs its API key', async () => {
   const root = await mkdtemp(join(tmpdir(), 'workdsh-local-models-'));
   const key = 'secret-key';
-  let served = [{ id: 'tiny', path: join(root, 'tiny.gguf') }];
+  // The router serves the models folder as '.', so it lists relative paths.
+  let served = [{ id: 'tiny', path: './tiny.gguf' }];
   await writeFile(join(root, 'tiny.gguf'), ggufHeader('llama', 2048));
   const requests = [];
   const server = createServer((request, response) => {
@@ -136,7 +140,7 @@ test('keeps the pi-ai route in step with the router and needs its API key', asyn
 
   process.env.WORKDSH_TEST_LLAMA_KEY = key;
   try {
-    apply(ctx, { baseURL, apiKeyEnv: 'WORKDSH_TEST_LLAMA_KEY', contextSize: 32_768, intervalMs: 50 });
+    apply(ctx, { baseURL, apiKeyEnv: 'WORKDSH_TEST_LLAMA_KEY', modelsDir: root, contextSize: 32_768, intervalMs: 50 });
     await until(() => writes.length === 1);
     const route = user.providers['llama-local'];
     assert.equal(route.api, 'openai-completions');

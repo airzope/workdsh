@@ -6,13 +6,14 @@ import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { writeTinyGguf } from './tiny-gguf.mjs'
 
 const [llama] = process.argv.slice(2)
 if (!llama) throw new Error('Usage: node smoke-llama.mjs <llama directory>')
 const manifest = JSON.parse(readFileSync(join(llama, 'manifest.json'), 'utf8'))
-const server = join(llama, manifest.server)
+// Absolute, because the server starts in the models folder.
+const server = resolve(llama, manifest.server)
 
 const version = spawnSync(server, ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 60_000 })
 if (version.status !== 0 || !`${version.stdout}${version.stderr}`.includes(manifest.version.replace(/^b/u, ''))) {
@@ -35,7 +36,10 @@ mkdirSync(models)
 writeTinyGguf(join(models, 'workdsh-smoke.gguf'))
 
 let log = ''
-const child = spawn(server, ['--host', '127.0.0.1', '--port', String(port), '--models-dir', models, '--models-max', '1', '--no-webui', '--offline'], {
+// As src/llama.ts does: llama.cpp checks the folder path through the ANSI
+// code page on Windows, so the server runs in the folder and serves '.'.
+const child = spawn(server, ['--host', '127.0.0.1', '--port', String(port), '--models-dir', '.', '--models-max', '1', '--no-webui', '--offline'], {
+  cwd: models,
   env: { ...process.env, LLAMA_API_KEY: key, LLAMA_CACHE: join(work, 'cache') },
   stdio: ['ignore', 'pipe', 'pipe'],
   detached: process.platform !== 'win32',

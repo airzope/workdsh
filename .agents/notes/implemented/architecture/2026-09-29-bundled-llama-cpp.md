@@ -22,6 +22,7 @@ The plugin rescans when the folder changes, and every 30 s as a fallback. It rem
 
 ## Server settings
 
+- **Working folder:** the server runs in the models folder and serves it as `--models-dir .`, and gets the presets path relative to it when that is ASCII. On Windows, llama.cpp checks those paths through the ANSI code page, so a non-ASCII absolute path (a user profile named in Chinese, for example) is not found. Model processes inherit the folder, and the Profile resolves the relative model paths the router lists against it.
 - **Router flags:** `--models-max 1`, `--sleep-idle-seconds 600`, `--no-webui` and `--offline`. Models load on first use, one at a time, and unload after ten idle minutes.
 - **Key:** it is passed as `LLAMA_API_KEY`. With `--api-key`, the router's model processes would run unprotected.
 - **Context:** router model processes ignore `LLAMA_ARG_*` variables, so the default 32K context comes from a generated router preset (`[*] c = 32768`). A user's `models/presets.ini` replaces it.
@@ -52,6 +53,7 @@ The Windows installer does not install the VC++ runtime, so `msvcp140.dll`, `vcr
 ## Limits
 
 - **Windows 7:** local models are best effort, because the VC++ pairing above has not run on real Windows 7.
+- **Windows file names:** model file and subfolder names must be ASCII on Windows. llama.cpp lists them through the ANSI code page, so other names cannot be served. The README in the folder and the user guide say so.
 - **GPU on Linux:** the Ubuntu builds use the CPU only. Vulkan needs newer shader tools than focal provides.
 - **Tool calls:** they depend on each model's chat template.
 - **Upgrades:** change the tag, commit, archive hashes and license hashes together. Re-run the audits, and build Linux on both architectures.
