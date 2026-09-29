@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0-alpha.6 — 2026-09-29
 
 - 通过 AnyDoc（`@firecrawl/anydoc`）本地转换 DOC、XLS/XLSX、PPT、ODT/ODS/ODP、RTF、EPUB 和 CSV。
 - 通过 PaddleOCR PP-OCRv5 移动版识别图片和 PDF 中没有文字层的页面；ONNX Runtime WebAssembly 在工作线程中运行。

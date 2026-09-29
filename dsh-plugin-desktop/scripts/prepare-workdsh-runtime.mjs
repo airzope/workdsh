@@ -8,7 +8,7 @@ import { DSH_VERSION } from './runtime-version.mjs'
 import { PRODUCT_PACKAGES, RELEASE_PACKAGES } from './workdsh-package-boundary.mjs'
 import { verifyPackageDshReferences, verifyProfileRelease } from './verify-profile-release.mjs'
 
-const WORKDSH_VERSION = '0.1.0-alpha.14'
+const WORKDSH_VERSION = '0.1.0-alpha.15'
 // GitHub repository whose v<version> release holds the published Profile.
 // CI passes the repository it runs in, so a fork installs its own release.
 const RELEASE_REPOSITORY = process.env.WORKDSH_RELEASE_REPOSITORY || 'techflag/workdsh'

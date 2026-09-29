@@ -5,19 +5,19 @@
 
 WorkDSH 是基于官方 DeepSeek Harness 的开源 AI 工作台。把对话、资料与能力组织到项目里，复用本地资料库，在任务旁查看和编辑交付成果。
 
-**桌面版 v2.0.6-alpha.1 · Web/插件 v0.1.0-alpha.14 · Alpha 预览版**
+**桌面版 v2.0.6-alpha.2 · Web/插件 v0.1.0-alpha.15 · Alpha 预览版**
 
-[桌面版下载](https://github.com/techflag/workdsh/releases/tag/desktop-v2.0.6-alpha.1) · [Web/插件下载](https://github.com/techflag/workdsh/releases/tag/v0.1.0-alpha.14) · [更新说明](https://github.com/techflag/workdsh/releases/tag/v0.1.0-alpha.14) · [快速开始](#快速开始) · [官网](https://techflag.github.io/workdsh/) · [Gitee 镜像](https://gitee.com/techflag/workdsh)
+[桌面版下载](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.2) · [Web/插件下载](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.15) · [更新说明](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.15) · [快速开始](#快速开始) · [官网](https://techflag.github.io/workdsh/) · [Gitee 镜像](https://gitee.com/techflag/workdsh)
 
 ## 下载 WorkDSH 桌面版
 
 | 系统 | 安装包 |
 | --- | --- |
-| Windows x64 | [下载 Setup.exe](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.1-x64-Setup.exe) |
-| macOS Apple 芯片 | [下载 arm64 DMG](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.1-arm64.dmg) |
-| macOS Intel | [下载 x64 DMG](https://github.com/techflag/workdsh/releases/download/desktop-v2.0.6-alpha.1/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.1-x64.dmg) |
+| Windows x64 | [下载 Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.2/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.2-x64-Setup.exe) |
+| macOS Apple 芯片 | [下载 arm64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.2/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.2-arm64.dmg) |
+| macOS Intel | [下载 x64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.2/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.2-x64.dmg) |
 
-这批 Alpha 安装包内置 WorkDSH v0.1.0-alpha.14 和官方 Harness 0.1.7-rc.2 Profile，包含 Node 与 Python。任务浏览器复用 Electron，不额外打包浏览器。macOS DMG 是未签名预览包；校验文件见[桌面版 Release](https://github.com/techflag/workdsh/releases/tag/desktop-v2.0.6-alpha.1)。
+这批 Alpha 安装包内置 WorkDSH v0.1.0-alpha.15 和官方 Harness 0.1.7-rc.2 Profile，包含 Node 与 Python。任务浏览器复用 Electron，不额外打包浏览器。macOS DMG 是未签名预览包；校验文件见[桌面版 Release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.2)。
 
 ![WorkDSH 深色项目主页，包含完整侧栏](assets/screenshots/workdsh-projects-alpha8-dark.png)
 
@@ -32,7 +32,7 @@ WorkDSH 是基于官方 DeepSeek Harness 的开源 AI 工作台。把对话、�
 | Office 成果 | 预览和编辑支持范围内的文档、演示文稿、表格、HTML 与 PDF 工作副本；不同格式的保真范围有差异。 |
 | 活动记录 | 查看原生任务与子代理活动；显示专家团名称不代表多个成员已经执行。 |
 
-alpha.14 整包包含 **12 个可安装模块**，包括项目、资料库和受管浏览器会话，并适配 Harness 0.1.7-rc.2 的公开接口。Desktop 中 Agent 操作的网页显示在右侧任务浏览器，与工具操作同一 Electron 页面。附件、输入和发送继续使用 Harness 原生能力。
+alpha.15 整包包含 **12 个可安装模块**，包括项目、资料库和受管浏览器会话，并适配 Harness 0.1.7-rc.2 的公开接口。Desktop 中 Agent 操作的网页显示在右侧任务浏览器，与工具操作同一 Electron 页面。附件、输入和发送继续使用 Harness 原生能力。
 
 ## 页面截图
 
@@ -68,7 +68,7 @@ alpha.14 整包包含 **12 个可安装模块**，包括项目、资料库和受
 
 环境要求：Node.js `^22.19.0 || >=24.0.0`、Corepack/pnpm，以及官方 **0.1.7-rc.2** 版本的 `dsh` CLI。
 
-1. 从 [alpha.14 Release](https://github.com/techflag/workdsh/releases/tag/v0.1.0-alpha.14) 下载全部 12 个 `.tgz`、`release-manifest.json`、`SHA256SUMS` 和 `install-workdsh.mjs`，放入同一目录。
+1. 从 [alpha.15 Release](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.15) 下载全部 12 个 `.tgz`、`release-manifest.json`、`SHA256SUMS` 和 `install-workdsh.mjs`，放入同一目录。
 2. 升级已有 Profile 时，先停止运行，并保留配置和数据的可恢复备份。
 3. 在下载目录执行：
 
@@ -106,7 +106,7 @@ corepack pnpm test:library
 corepack pnpm check:versions
 ```
 
-[发行记录](https://github.com/techflag/workdsh/releases) · [项目规划](https://github.com/techflag/workdsh/issues)
+[发行记录](https://github.com/airzope/workdsh/releases) · [项目规划](https://github.com/techflag/workdsh/issues)
 
 当前为 Alpha 预览版。跨平台安装、长时间真实模型专家团、任意 Office 文件保真和多人治理尚未完整验收。Harness 升级后需复验原生 UI 适配。具体测试范围以本次更新说明为准。
 
