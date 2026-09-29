@@ -239,6 +239,10 @@ jobs:
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+      # Spotlight indexes each freshly built disk image, which can keep it busy
+      # so that dmgbuild's hdiutil detach fails with "Resource busy".
+      - name: Stop Spotlight indexing on the runner
+        run: sudo mdutil -a -i off
       - name: Package macOS through the single release script
         timeout-minutes: 55
         env:
