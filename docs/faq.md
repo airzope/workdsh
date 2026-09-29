@@ -29,7 +29,7 @@ Windows 7 SP1 x64 借助第三方兼容层 [VxKex NEXT](https://github.com/YuZho
 
 - 包内含 Electron、Node.js 24、Python 3.12（含 Office 相关库）、办公技能、LibreOffice Kit 的 WebAssembly 引擎与 DSH Profile，无需联网即可安装和使用这些组件。
 - 每个包都在对应架构上原生构建，并在全新的 Ubuntu 20.04 与 24.04 容器中安装验证：运行 Electron、Node.js、Python 与 DSH CLI，并把 Word 文档离线转换为 PDF。
-- 例外：在 Ubuntu 20.04 x64 上，实验性的本地 SenseVoice 语音转文字不可用，因为 DSH 固定版本所带的 sherpa-onnx 1.13.8 x64 绑定需要 glibc 2.32，至少需要 Ubuntu 22.04。它只在单独的识别进程中加载，WorkDSH 的其他功能不受影响；arm64 包在 20.04 上可以使用该功能。
+- 本地 SenseVoice 语音转文字同样支持 Ubuntu 20.04。上游 sherpa-onnx 1.13.8 的 x64 绑定需要 glibc 2.32，因此 x64 包内的绑定改为在 Ubuntu 20.04 上从同一版本源码重新编译。
 - 包推荐安装 `fonts-noto-cjk`，以便中文文档正确渲染；使用 `--no-install-recommends` 安装时请自行补装中文字体。
 - Ubuntu 24.04 默认限制非特权用户命名空间；安装脚本会为 WorkDSH 写入 AppArmor 配置，旧系统则按需为 `chrome-sandbox` 设置 SUID。
 

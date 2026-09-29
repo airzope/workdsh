@@ -1,5 +1,5 @@
 # Bilingual-pair consistency record: the git blob hash of each side as of the last
 # confirmed-consistent state. Both languages carry equal authority. Update both files
 # and re-record their hashes with git hash-object after editing either side.
-2026-09-29-ubuntu-deb-packages.md: 78f11c952bfaa2de491b5a2a725c714eb796609a
-2026-09-29-ubuntu-deb-packages.zh.md: 7639863172226b26248f696ccc4e1a1368596240
+2026-09-29-ubuntu-deb-packages.md: d6677990d3020d5d9d1ef419edf09d071402d0fc
+2026-09-29-ubuntu-deb-packages.zh.md: c6896839f325f4885ca883cd94b38a5e995801a0

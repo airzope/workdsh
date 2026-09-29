@@ -33,7 +33,6 @@ function report(arch: 'x64' | 'arm64', tooNew: Record<string, string[]> = {}): L
     missingOfflineFiles: [],
     tooNew,
     newest: { GLIBC: '2.28' },
-    limitedFeatures: [],
   }
 }
 
@@ -58,6 +57,10 @@ function options(root: string, steps: string[], overrides: Partial<LinuxPackageO
       steps.push(`audit ${application} ${target}`)
       return report(target)
     },
+    prepareNativeBindings: (profile, target) => {
+      steps.push(`bindings ${profile} ${target}`)
+      return []
+    },
     debField: (_deb, field) => ({ Package: 'workdsh', Architecture: debianArchitecture(arch), Recommends: 'fonts-noto-cjk' })[field] ?? '',
     log: () => undefined,
     ...overrides,
@@ -74,6 +77,7 @@ describe('Ubuntu deb packaging', () => {
     expect(deb).toBe(join(root, 'dist', 'WorkDSH-2.0.6-alpha.1-linux-amd64.deb'))
     expect(steps).toEqual([
       'corepack yarn workspace dsh-plugin-desktop check:linux-package',
+      `bindings ${join(root, 'build', 'workdsh-runtime', 'profiles', 'workdsh')} x64`,
       '/usr/bin/node /builder/cli.js --linux deb --x64 --publish never --config.npmRebuild=false',
       `audit ${linuxApplicationDirectory(root, 'x64')} x64`,
     ])
@@ -88,9 +92,28 @@ describe('Ubuntu deb packaging', () => {
 
     expect(deb).toBe(join(root, 'dist', 'WorkDSH-2.0.6-alpha.1-linux-arm64.deb'))
     expect(steps).toEqual([
+      `bindings ${join(root, 'build', 'workdsh-runtime', 'profiles', 'workdsh')} arm64`,
       '/usr/bin/node /builder/cli.js --linux deb --arm64 --publish never --config.npmRebuild=false',
       `audit ${join(root, 'dist', 'linux-arm64-unpacked')} arm64`,
     ])
+  })
+
+  it('rebuilds incompatible Profile bindings before electron-builder copies the Profile', () => {
+    const root = desktop()
+    const steps: string[] = []
+    const logs: string[] = []
+
+    packageLinuxDeb(options(root, steps, {
+      env: { DSH_PACKAGE_CHECK_ALREADY_RAN: '1' },
+      prepareNativeBindings: () => {
+        steps.push('rebuild')
+        return ['node_modules/sherpa-onnx-linux-x64/sherpa-onnx.node']
+      },
+      log: message => logs.push(message),
+    }))
+
+    expect(steps.indexOf('rebuild')).toBeLessThan(steps.findIndex(step => step.includes('/builder/cli.js')))
+    expect(logs).toContain('Rebuilt for Ubuntu 20.04: node_modules/sherpa-onnx-linux-x64/sherpa-onnx.node')
   })
 
   it('fails when a bundled binary needs a newer glibc than Ubuntu 20.04', () => {

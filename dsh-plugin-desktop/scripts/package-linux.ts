@@ -6,6 +6,7 @@ import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { assertLinuxPayload, auditLinuxPayload, type LinuxAuditReport } from './linux-glibc-audit.ts'
+import { prepareSherpaOnnxForUbuntu2004 } from './linux-sherpa-onnx.ts'
 
 /** Injectable native Linux packaging boundary used by focused tests. */
 export interface LinuxPackageOptions {
@@ -19,6 +20,8 @@ export interface LinuxPackageOptions {
   readonly nodeExecutable: string
   readonly run: (command: string, args: readonly string[], cwd: string, env: NodeJS.ProcessEnv) => void
   readonly audit: (application: string, arch: 'x64' | 'arm64') => LinuxAuditReport
+  /** Rebuild Profile native bindings that Ubuntu 20.04 cannot load; returns their Profile-relative paths. */
+  readonly prepareNativeBindings: (profile: string, arch: 'x64' | 'arm64') => string[]
   /** Read one control field from a .deb. */
   readonly debField: (deb: string, field: string) => string
   readonly log: (message: string) => void
@@ -51,6 +54,7 @@ export function createLinuxPackageOptions(): LinuxPackageOptions {
     nodeExecutable: process.execPath,
     run,
     audit: (application, arch) => auditLinuxPayload(application, arch),
+    prepareNativeBindings: (profile, arch) => prepareSherpaOnnxForUbuntu2004(profile, arch),
     debField,
     log: message => console.log(message),
   }
@@ -89,6 +93,9 @@ export function packageLinuxDeb(options: LinuxPackageOptions = createLinuxPackag
   } else {
     options.log('Skipping the Linux package preflight; the package gate already passed.')
   }
+  const profile = join(options.desktopRoot, 'build', 'workdsh-runtime', 'profiles', 'workdsh')
+  const rebuilt = options.prepareNativeBindings(profile, arch)
+  if (rebuilt.length > 0) options.log(`Rebuilt for Ubuntu 20.04: ${rebuilt.join(', ')}`)
   options.log(`Building an Ubuntu ${debianArchitecture(arch)} package on this ${arch} host.`)
   options.run(
     options.nodeExecutable,
@@ -101,9 +108,6 @@ export function packageLinuxDeb(options: LinuxPackageOptions = createLinuxPackag
   writeFileSync(reportPath, `${JSON.stringify(report, undefined, 2)}\n`)
   assertLinuxPayload(report)
   options.log(`Ubuntu 20.04 audit passed for ${String(report.images)} ${arch} ELF images (newest ${JSON.stringify(report.newest)}); report: ${reportPath}`)
-  for (const limited of report.limitedFeatures) {
-    options.log(`${limited.feature} needs Ubuntu ${limited.minimumUbuntu} or later (${limited.needs.join(', ')} in ${limited.file})`)
-  }
   const { version } = JSON.parse(readFileSync(join(options.desktopRoot, 'package.json'), 'utf8')) as { version: string }
   const deb = join(options.desktopRoot, 'dist', `WorkDSH-${version}-linux-${debianArchitecture(arch)}.deb`)
   if (!existsSync(deb)) throw new Error(`Expected Linux package is missing: ${deb}`)

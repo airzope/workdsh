@@ -29,7 +29,7 @@ Download the package for your CPU (`amd64` for x64, `arm64` for ARM), run `sudo 
 
 - The package contains Electron, Node.js 24, Python 3.12 with its Office libraries, the Office skills, the LibreOffice Kit WebAssembly engine, and the DSH Profile, so these components install and work without a network.
 - Each package is built natively for its architecture and installed into fresh Ubuntu 20.04 and 24.04 containers, where Electron, Node.js, Python, and the DSH CLI run and a Word document is converted to PDF offline.
-- Exception: on Ubuntu 20.04 x64, the experimental local SenseVoice speech-to-text is unavailable. The sherpa-onnx 1.13.8 x64 binding that comes with the pinned DSH needs glibc 2.32, so it requires Ubuntu 22.04 or later. It loads only in its own recognition process, so the rest of WorkDSH is unaffected; the arm64 package supports this feature on 20.04.
+- Local SenseVoice speech-to-text also works on Ubuntu 20.04. Upstream's sherpa-onnx 1.13.8 x64 binding needs glibc 2.32, so the x64 package carries that binding recompiled from the same release's sources on Ubuntu 20.04.
 - The package recommends `fonts-noto-cjk` so Chinese documents render correctly; add Chinese fonts yourself when installing with `--no-install-recommends`.
 - Ubuntu 24.04 restricts unprivileged user namespaces by default; the install script adds an AppArmor profile for WorkDSH, and older systems get a SUID `chrome-sandbox` when needed.
 

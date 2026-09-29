@@ -11,35 +11,6 @@ export const UBUNTU_2004_SYMBOL_LIMITS: Readonly<Record<string, string>> = {
   CXXABI: '1.3.12',
 }
 
-/** Newest symbol versions that Ubuntu 22.04 LTS provides. */
-export const UBUNTU_2204_SYMBOL_LIMITS: Readonly<Record<string, string>> = {
-  GLIBC: '2.35',
-  GLIBCXX: '3.4.30',
-  CXXABI: '1.3.13',
-}
-
-/** A pinned DSH binary that needs a newer Ubuntu and only disables one isolated feature there. */
-export interface LinuxFeatureException {
-  /** Path relative to the application, with `/` separators. */
-  readonly pattern: RegExp
-  readonly feature: string
-  readonly minimumUbuntu: '22.04'
-}
-
-/**
- * sherpa-onnx-node 1.13.8 builds only its x64 Node-API binding with GCC 11 on
- * glibc 2.32 (`__libc_single_threaded`, `std::__throw_bad_array_new_length`).
- * DSH loads it only inside the SenseVoice recognition process, so Ubuntu 20.04
- * loses local SenseVoice speech-to-text and nothing else.
- */
-export const LINUX_FEATURE_EXCEPTIONS: readonly LinuxFeatureException[] = [
-  {
-    pattern: /(?:^|\/)node_modules\/sherpa-onnx-linux-x64\/sherpa-onnx\.node$/u,
-    feature: 'Experimental local SenseVoice speech-to-text (sherpa-onnx)',
-    minimumUbuntu: '22.04',
-  },
-]
-
 /** ELF e_machine values of the packaged architectures. */
 export const ELF_MACHINES: Readonly<Record<'x64' | 'arm64', number>> = { x64: 62, arm64: 183 }
 
@@ -67,13 +38,9 @@ export function compareDotted(left: string, right: string): number {
  * @returns True when the requirement exceeds the matching limit.
  */
 export function exceedsUbuntu2004(requirement: string): boolean {
-  return exceedsLimits(requirement, UBUNTU_2004_SYMBOL_LIMITS)
-}
-
-function exceedsLimits(requirement: string, limits: Readonly<Record<string, string>>): boolean {
   const match = /^([A-Z]+)_(\d+(?:\.\d+)*)$/u.exec(requirement)
   if (match === null) return false
-  const limit = limits[match[1]!]
+  const limit = UBUNTU_2004_SYMBOL_LIMITS[match[1]!]
   return limit !== undefined && compareDotted(match[2]!, limit) > 0
 }
 
@@ -173,8 +140,6 @@ export interface LinuxAuditReport {
   readonly missingOfflineFiles: string[]
   readonly tooNew: Record<string, string[]>
   readonly newest: Record<string, string>
-  /** Files covered by LINUX_FEATURE_EXCEPTIONS that need more than Ubuntu 20.04. */
-  readonly limitedFeatures: { file: string, feature: string, minimumUbuntu: string, needs: string[] }[]
 }
 
 function* walk(directory: string): Generator<string> {
@@ -209,7 +174,6 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
   const tooNew: Record<string, string[]> = {}
   const newest: Record<string, string> = {}
   const otherArchitectures: string[] = []
-  const limitedFeatures: LinuxAuditReport['limitedFeatures'] = []
   let images = 0
   // Located by manifest so the check holds for isolated and hoisted pnpm layouts.
   let wasmEngine = false
@@ -224,26 +188,16 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
       continue
     }
     images++
-    const exception = LINUX_FEATURE_EXCEPTIONS.find(item => item.pattern.test(label.replaceAll('\\', '/')))
-    const excepted: string[] = []
     for (const requirement of elf.needs) {
       const match = /^([A-Z]+)_(\d+(?:\.\d+)*)$/u.exec(requirement)
       if (match === null || UBUNTU_2004_SYMBOL_LIMITS[match[1]!] === undefined) continue
-      if (!exceedsUbuntu2004(requirement)) {
-        const current = newest[match[1]!]
-        if (current === undefined || compareDotted(match[2]!, current) > 0) newest[match[1]!] = match[2]!
-      } else if (exception !== undefined && !exceedsLimits(requirement, UBUNTU_2204_SYMBOL_LIMITS)) {
-        excepted.push(requirement)
-      } else {
-        (tooNew[requirement] ??= []).push(label)
-      }
-    }
-    if (exception !== undefined && excepted.length > 0) {
-      limitedFeatures.push({ file: label, feature: exception.feature, minimumUbuntu: exception.minimumUbuntu, needs: excepted })
+      const current = newest[match[1]!]
+      if (current === undefined || compareDotted(match[2]!, current) > 0) newest[match[1]!] = match[2]!
+      if (exceedsUbuntu2004(requirement)) (tooNew[requirement] ??= []).push(label)
     }
   }
   if (!wasmEngine) missingOfflineFiles.push('LibreOffice Kit WebAssembly engine (@deepseek-ai/libreoffice-kit-wasm)')
-  return { application, arch, images, otherArchitectures: otherArchitectures.sort(), wrongArchitecture, missingOfflineFiles, tooNew, newest, limitedFeatures }
+  return { application, arch, images, otherArchitectures: otherArchitectures.sort(), wrongArchitecture, missingOfflineFiles, tooNew, newest }
 }
 
 /**

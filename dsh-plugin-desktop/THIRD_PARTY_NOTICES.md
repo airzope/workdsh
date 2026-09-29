@@ -41,5 +41,14 @@ older:
   `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`),
   distributed under the Microsoft Software License Terms for Visual Studio.
 
+The Ubuntu x64 package replaces one file of the Profile's
+[`sherpa-onnx-linux-x64`](https://www.npmjs.com/package/sherpa-onnx-linux-x64)
+1.13.8 package, which DSH uses for local SenseVoice speech-to-text:
+`sherpa-onnx.node` is compiled from the unmodified sources of
+[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) at commit
+`11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf` (tag `v1.13.8`, Apache License 2.0)
+on Ubuntu 20.04, so that it runs with glibc 2.31. It links the package's own
+`libsherpa-onnx-c-api.so`, which is shipped unchanged.
+
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Install a WorkDSH .deb into a clean Ubuntu container (20.04 and 24.04 in CI) and run
 # every bundled runtime headlessly: Electron (as Node), Node.js, Python with
-# the Office libraries, the DSH CLI, and an offline DOCX-to-PDF conversion
-# through the bundled LibreOffice Kit engine.
+# the Office libraries, the DSH CLI, the SenseVoice speech-to-text binding, and
+# an offline DOCX-to-PDF conversion through the bundled LibreOffice Kit engine.
 # Usage: smoke-ubuntu-deb.sh /path/to/WorkDSH-<version>-linux-<arch>.deb
 set -euo pipefail
 
@@ -16,7 +16,7 @@ if ! apt-get install -y -qq --no-install-recommends "$deb" fonts-dejavu-core > /
   exit 1
 fi
 . /etc/os-release
-echo "Installed $(dpkg-query -W -f '${Package} ${Version} ${Architecture}' workdsh) on ${PRETTY_NAME}, $(ldd --version | head -n 1)"
+echo "Installed $(dpkg-query -W -f '${Package} ${Version} ${Architecture}' workdsh) on ${PRETTY_NAME}, $(getconf GNU_LIBC_VERSION)"
 
 app=/opt/WorkDSH
 runtime="$app/resources/workdsh-runtime"
@@ -33,21 +33,20 @@ ELECTRON_RUN_AS_NODE=1 "$app/workdsh" -e \
 
 work="$(mktemp -d)"
 
-# DSH loads the SenseVoice speech-to-text binding only in its recognition
-# process. Its x64 build needs glibc 2.32, so it must load from Ubuntu 22.04
-# (glibc 2.35) on and is only reported on older releases.
-glibc="$(ldd --version | head -n 1 | grep -oE '[0-9]+\.[0-9]+$')"
-binding="$(find "$runtime/profiles/workdsh/node_modules" -path "*/sherpa-onnx-linux-$(dpkg --print-architecture | sed 's/amd64/x64/')/sherpa-onnx.node" -print -quit)"
-if [ -z "$binding" ]; then
-  echo "SenseVoice speech-to-text binding is not packaged"
-elif "$node" -e 'require(process.argv[1])' "$binding" 2> "$work/binding.log"; then
-  echo "SenseVoice speech-to-text binding loads on glibc $glibc"
-elif [ "$(printf '%s\n' 2.35 "$glibc" | sort -V | head -n 1)" = 2.35 ]; then
-  cat "$work/binding.log"
-  exit 1
-else
-  echo "SenseVoice speech-to-text binding is unavailable on glibc $glibc (needs Ubuntu 22.04 or later): $(grep -m 1 -oE "version \`[^']+' not found" "$work/binding.log" || head -n 1 "$work/binding.log")"
-fi
+# DSH's local SenseVoice speech-to-text loads this binding in its recognition
+# process. The x64 build is rebuilt for Ubuntu 20.04 during packaging, so it
+# must load on every supported release and run native code through the C API.
+sherpa="$(find "$runtime/profiles/workdsh/node_modules" -path '*/sherpa-onnx-node/package.json' -print -quit)"
+test -n "$sherpa"
+"$node" -e '
+const sherpa = require(process.argv[1])
+const samples = Float32Array.from({ length: 16000 }, (_, i) => 0.5 * Math.sin(2 * Math.PI * 440 * i / 16000))
+if (!sherpa.writeWave(process.argv[2], { samples, sampleRate: 16000 })) process.exit(1)
+const wave = sherpa.readWave(process.argv[2])
+const resampled = new sherpa.LinearResampler(16000, 8000).flush(wave.samples)
+if (wave.sampleRate !== 16000 || wave.samples.length !== 16000 || Math.abs(resampled.length - 8000) > 8) process.exit(1)
+console.log(`SenseVoice speech-to-text binding (sherpa-onnx ${sherpa.version}) runs`)
+' "$(dirname "$sherpa")" "$work/tone.wav"
 
 "$python" -I -B -c 'import docx, sys; d = docx.Document(); d.add_heading("WorkDSH", 0); d.add_paragraph("Ubuntu offline conversion"); d.save(sys.argv[1])' "$work/sample.docx"
 HOME="$work" "$node" "$runtime/profiles/workdsh/node_modules/@deepseek-ai/libreoffice-kit/lib/cli.js" \

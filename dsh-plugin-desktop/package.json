@@ -59,6 +59,8 @@
     "builder-util": "26.15.3",
     "electron": "43.3.0",
     "electron-builder": "26.15.7",
+    "node-addon-api": "8.9.2",
+    "node-api-headers": "1.9.0",
     "sharp": "0.35.3",
     "tsdown": "0.22.2",
     "typescript": "6.0.3",
