@@ -8,6 +8,16 @@
 
 启动后，WorkDSH 在本机运行 Profile 中的官方 DSH 服务，并在应用窗口打开本机页面。项目、资料库、专家、技能与连接器由 WorkDSH Profile 提供。窗口关闭会结束 Windows 与 Linux 上的应用；macOS 遵循系统窗口生命周期。当前外壳不提供旧文档描述的托盘、多 Profile 选择或自动更新面板。
 
+## 文档转换与文字识别
+
+资料库可导入 Markdown、TXT、HTML、PDF、Word（DOC/DOCX）、Excel（XLS/XLSX）、PowerPoint（PPT/PPTX）、OpenDocument、RTF、EPUB、CSV 和图片（PNG/JPEG/BMP/GIF/WebP/TIFF），并生成可搜索、可在对话中引用的文本。
+
+- Office、OpenDocument、RTF、EPUB 与 CSV 由 AnyDoc 在本机转换。
+- 图片和扫描版 PDF 中没有文字层的页面由 PaddleOCR（PP-OCRv5 移动版）在本机识别。每个 PDF 最多识别 100 页；打开这类资料时可在原件与识别文本之间切换。
+- 识别结果可能有误，请核对关键数字和专有名词。
+
+对话中也可以让 AI 直接处理工作区文件：`document_to_markdown` 把文档转换为 Markdown，`document_ocr` 逐页识别图片或 PDF 并给出置信度。所有转换与识别都离线进行，文件不会离开本机。
+
 ## 数据与插件
 
 运行数据位于本机应用数据目录下的 DSH home。安装包内的 Profile 提供固定版本依赖；桌面外壳不会把另一套 DSH npm 依赖安装到 `app.asar`。模型或外部工具可能按用户配置访问网络。

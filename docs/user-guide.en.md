@@ -8,6 +8,16 @@ Download a release with actual installer assets from [GitHub Releases](https://g
 
 WorkDSH starts the official DSH service from that Profile locally and opens its page in the application window. Projects, library, experts, skills, and connectors come from the WorkDSH Profile. Closing the window exits the application on Windows and Linux; macOS follows its normal window lifecycle. The current carrier does not include the former tray, multi-Profile selector, or automatic update panel described in older documentation.
 
+## Document conversion and text recognition
+
+The library imports Markdown, TXT, HTML, PDF, Word (DOC/DOCX), Excel (XLS/XLSX), PowerPoint (PPT/PPTX), OpenDocument, RTF, EPUB, CSV, and images (PNG/JPEG/BMP/GIF/WebP/TIFF), and produces text you can search and reference in conversations.
+
+- Office, OpenDocument, RTF, EPUB, and CSV files are converted locally by AnyDoc.
+- Images, and PDF pages without a text layer (scans), are recognized locally by PaddleOCR (PP-OCRv5 mobile), up to 100 pages per PDF. When you open such a file, you can switch between the original and the recognized text.
+- Recognition can make mistakes; check key numbers and proper names.
+
+In conversations the AI can also process workspace files directly: `document_to_markdown` converts a document to Markdown, and `document_ocr` recognizes the text of an image or of PDF pages, with a confidence per page. Conversion and recognition run offline, so files never leave the computer.
+
 ## Data and plugins
 
 Runtime data lives in a DSH home under the local application-data directory. The installer contains the pinned Profile dependencies; the Electron carrier does not install a second DSH npm tree into `app.asar`. Models and external tools may access the network according to user configuration.

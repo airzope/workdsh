@@ -41,6 +41,22 @@ older:
   `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`),
   distributed under the Microsoft Software License Terms for Visual Studio.
 
+The Library plugin in every package converts documents and recognizes text
+offline with:
+
+- [AnyDoc](https://github.com/firecrawl/anydoc) (`@firecrawl/anydoc` 0.2.4 and
+  its per-platform native package), MIT License. Only local conversion is used;
+  its hosted OCR option is never enabled.
+- The PP-OCRv5 mobile text detection and recognition models and dictionary from
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR), Apache License 2.0,
+  as converted to ONNX by [eSearch-OCR](https://github.com/xushengfeng/eSearch-OCR)
+  (Apache License 2.0), pinned by SHA-256.
+- [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.30.0 (its Node
+  entry and one WebAssembly build) and `onnxruntime-common`, MIT License.
+- [utif2](https://github.com/photopea/UTIF.js) for TIFF images, MIT License.
+
+The Library's `resources/ocr/NOTICE.md` records the exact files.
+
 The Ubuntu x64 package replaces one file of the Profile's
 [`sherpa-onnx-linux-x64`](https://www.npmjs.com/package/sherpa-onnx-linux-x64)
 1.13.8 package, which DSH uses for local SenseVoice speech-to-text:
