@@ -176,6 +176,15 @@ export function readPeImports(path: string): { machine: number, imports: string[
   }
 }
 
+/**
+ * Imports a GPU driver provides, allowed only for the run-time-loaded image
+ * that needs them: ggml loads its Vulkan backend dynamically and skips it
+ * when no driver installed the Vulkan loader.
+ */
+export const DRIVER_PROVIDED_IMPORTS: Readonly<Record<string, RegExp>> = {
+  'vulkan-1.dll': /(?:^|\/)llama\/bin\/ggml-vulkan\.dll$/iu,
+}
+
 /** Findings for one packaged application directory. */
 export interface Windows7AuditReport {
   readonly application: string
@@ -209,6 +218,12 @@ export const WINDOWS7_OFFLINE_FILES = [
   'media/manifest.json',
   'media/bin/ffmpeg.exe',
   'media/bin/ffprobe.exe',
+  'llama/manifest.json',
+  'llama/LICENSE',
+  'llama/bin/llama-server.exe',
+  'llama/bin/msvcp140.dll',
+  'llama/bin/vcruntime140.dll',
+  'llama/bin/vcruntime140_1.dll',
   'package-cache/release-manifest.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
@@ -247,8 +262,8 @@ export function auditWindows7Payload(application: string): Windows7AuditReport {
     }
     scanned++
     for (const dll of parsed.imports) {
-      const owner = resolveWindows7Import(dll, shipped)
       const key = dll.toLowerCase()
+      const owner = resolveWindows7Import(dll, shipped) ?? (DRIVER_PROVIDED_IMPORTS[key]?.test(label) === true ? 'gpu-driver' : undefined)
       if (owner === undefined) (unresolvedImports[key] ??= []).push(label)
       else if (!(resolvedBy[owner] ??= []).includes(key)) resolvedBy[owner]!.push(key)
     }

@@ -116,6 +116,9 @@ export const MACOS_OFFLINE_FILES = [
   'media/manifest.json',
   'media/bin/ffmpeg',
   'media/bin/ffprobe',
+  'llama/manifest.json',
+  'llama/LICENSE',
+  'llama/bin/llama-server',
   'package-cache/release-manifest.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
@@ -178,6 +181,7 @@ export function auditMacApplication(application: string, arch: 'x64' | 'arm64'):
     join('Contents', 'Resources', 'workdsh-runtime', 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'),
     join('Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffmpeg'),
     join('Contents', 'Resources', 'workdsh-runtime', 'media', 'bin', 'ffprobe'),
+    join('Contents', 'Resources', 'workdsh-runtime', 'llama', 'bin', 'llama-server'),
   ])
   const wrongArchitecture: string[] = []
   const otherArchitectures: string[] = []

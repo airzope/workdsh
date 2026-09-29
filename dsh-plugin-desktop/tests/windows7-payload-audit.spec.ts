@@ -109,6 +109,19 @@ describe('Windows 7 package audit', { timeout: 30_000 }, () => {
     expect(() => assertWindows7Payload(report)).not.toThrow()
   })
 
+  it('accepts the Vulkan loader only from the dynamically loaded llama.cpp backend', () => {
+    const root = application()
+    const bin = join(root, 'resources', 'workdsh-runtime', 'llama', 'bin')
+    write(join(bin, 'ggml-vulkan.dll'), peImage(['KERNEL32.dll', 'vulkan-1.dll', 'VCRUNTIME140.dll']))
+    write(join(root, 'resources', 'other', 'ggml-vulkan.dll'), peImage(['vulkan-1.dll']))
+
+    const report = auditWindows7Payload(root)
+
+    expect(report.resolvedBy['gpu-driver']).toEqual(['vulkan-1.dll'])
+    expect(report.resolvedBy.payload).toContain('vcruntime140.dll')
+    expect(report.unresolvedImports).toEqual({ 'vulkan-1.dll': ['resources/other/ggml-vulkan.dll'] })
+  })
+
   it('reports missing offline content and imports nothing provides', () => {
     const root = application()
     rmSync(join(root, 'resources', 'workdsh-runtime', 'office-skills', 'office-docx', 'SKILL.md'))

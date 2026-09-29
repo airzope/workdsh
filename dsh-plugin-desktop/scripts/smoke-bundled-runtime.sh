@@ -49,3 +49,5 @@ echo "LibreOffice Kit converted DOCX to PDF ($(wc -c < "$work/sample.pdf" | tr -
 # packaged modules.
 HOME="$work" "$node" "$(dirname "$0")/smoke-document-engines.mjs" "$runtime/profiles/workdsh/node_modules/workdsh-plugin-library"
 HOME="$work" "$node" "$(dirname "$0")/smoke-media.mjs" "$runtime/media" "$runtime/profiles/workdsh/node_modules/workdsh-plugin-office"
+# llama.cpp in router mode over a models folder, as the carrier runs it.
+HOME="$work" "$node" "$(dirname "$0")/smoke-llama.mjs" "$runtime/llama"
