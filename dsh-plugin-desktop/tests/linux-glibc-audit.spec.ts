@@ -120,7 +120,40 @@ describe('Linux package audit', () => {
     expect(report.images).toBe(3)
     expect(report.newest).toEqual({ GLIBC: '2.28', GLIBCXX: '3.4.21', CXXABI: '1.3.11' })
     expect(report.otherArchitectures).toEqual([join('resources', 'prebuilds', 'linux-arm64', 'addon.node')])
+    expect(report.limitedFeatures).toEqual([])
     expect(() => assertLinuxPayload(report)).not.toThrow()
+  })
+
+  it('limits the SenseVoice binding exception to Ubuntu 22.04 symbol versions', () => {
+    const root = application()
+    const binding = join('resources', 'workdsh-runtime', 'profiles', 'workdsh', 'node_modules', 'sherpa-onnx-linux-x64', 'sherpa-onnx.node')
+    write(join(root, binding), elf(['GLIBC_2.32', 'GLIBCXX_3.4.29', 'GLIBC_2.17']))
+
+    const report = auditLinuxPayload(root, 'x64')
+
+    expect(report.tooNew).toEqual({})
+    expect(report.newest.GLIBC).toBe('2.28')
+    expect(report.limitedFeatures).toEqual([{
+      file: binding,
+      feature: 'Experimental local SenseVoice speech-to-text (sherpa-onnx)',
+      minimumUbuntu: '22.04',
+      needs: ['GLIBCXX_3.4.29', 'GLIBC_2.32'],
+    }])
+    expect(() => assertLinuxPayload(report)).not.toThrow()
+
+    write(join(root, binding), elf(['GLIBC_2.38']))
+    expect(auditLinuxPayload(root, 'x64').tooNew).toEqual({ 'GLIBC_2.38': [binding] })
+  })
+
+  it('applies the exception to no other file', () => {
+    const root = application()
+    const other = join('resources', 'workdsh-runtime', 'profiles', 'workdsh', 'node_modules', 'other-addon', 'sherpa-onnx.node')
+    write(join(root, other), elf(['GLIBC_2.32']))
+
+    const report = auditLinuxPayload(root, 'x64')
+
+    expect(report.tooNew).toEqual({ 'GLIBC_2.32': [other] })
+    expect(report.limitedFeatures).toEqual([])
   })
 
   it('reports newer symbol versions, wrong main executables and missing offline content', () => {

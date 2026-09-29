@@ -33,6 +33,7 @@ function report(arch: 'x64' | 'arm64', tooNew: Record<string, string[]> = {}): L
     missingOfflineFiles: [],
     tooNew,
     newest: { GLIBC: '2.28' },
+    limitedFeatures: [],
   }
 }
 

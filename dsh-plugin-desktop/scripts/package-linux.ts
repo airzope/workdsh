@@ -101,6 +101,9 @@ export function packageLinuxDeb(options: LinuxPackageOptions = createLinuxPackag
   writeFileSync(reportPath, `${JSON.stringify(report, undefined, 2)}\n`)
   assertLinuxPayload(report)
   options.log(`Ubuntu 20.04 audit passed for ${String(report.images)} ${arch} ELF images (newest ${JSON.stringify(report.newest)}); report: ${reportPath}`)
+  for (const limited of report.limitedFeatures) {
+    options.log(`${limited.feature} needs Ubuntu ${limited.minimumUbuntu} or later (${limited.needs.join(', ')} in ${limited.file})`)
+  }
   const { version } = JSON.parse(readFileSync(join(options.desktopRoot, 'package.json'), 'utf8')) as { version: string }
   const deb = join(options.desktopRoot, 'dist', `WorkDSH-${version}-linux-${debianArchitecture(arch)}.deb`)
   if (!existsSync(deb)) throw new Error(`Expected Linux package is missing: ${deb}`)
