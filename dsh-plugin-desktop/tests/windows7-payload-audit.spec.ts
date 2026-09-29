@@ -92,7 +92,9 @@ describe('Windows 7 import resolution', () => {
   })
 })
 
-describe('Windows 7 package audit', () => {
+// Each case writes several fresh .exe fixtures, which Windows Defender scans on
+// CI runners; the default 5-second budget is too tight there.
+describe('Windows 7 package audit', { timeout: 30_000 }, () => {
   it('passes a complete offline payload whose imports all resolve', () => {
     const root = application()
     write(join(root, 'resources', 'pip', 'w32.exe'), peImage(['KERNEL32.dll', 'dxcore.dll'], 0x14c))
