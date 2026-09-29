@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import sharp from 'sharp'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
@@ -49,8 +49,9 @@ describe('brand configuration', () => {
   })
 
   it('selects a brand directory or brand.json relative to the repository', () => {
-    expect(brandDirectory({ WORKDSH_BRAND: 'branding/acme' }, '/repo')).toBe(join('/repo', 'branding', 'acme'))
-    expect(brandDirectory({ WORKDSH_BRAND: '/brands/acme/brand.json' }, '/repo')).toBe(join('/brands', 'acme'))
+    expect(brandDirectory({ WORKDSH_BRAND: 'branding/acme' }, '/repo')).toBe(resolve('/repo', 'branding', 'acme'))
+    const absolute = resolve('/brands', 'acme', 'brand.json')
+    expect(brandDirectory({ WORKDSH_BRAND: absolute }, '/repo')).toBe(dirname(absolute))
   })
 
   it('turns a custom brand into electron-builder overrides', async () => {
@@ -132,7 +133,7 @@ describe('packaged brand at run time', () => {
       .toBe('C:\\Apps\\AcmeDesk\\resources\\app.asar.unpacked\\build\\brand\\mark.svg')
     expect(unpackedPath('/repo/dsh-plugin-desktop/build/brand/mark.svg')).toBe('/repo/dsh-plugin-desktop/build/brand/mark.svg')
     expect(brandEnvironment({ name: '智办', fileName: 'AcmeDesk', dataDirectory: 'AcmeDesk', mark: 'mark.png' }, '/opt/AcmeDesk/resources/app.asar/build/brand'))
-      .toEqual({ WORKDSH_BRAND_NAME: '智办', WORKDSH_BRAND_MARK: '/opt/AcmeDesk/resources/app.asar.unpacked/build/brand/mark.png' })
+      .toEqual({ WORKDSH_BRAND_NAME: '智办', WORKDSH_BRAND_MARK: join('/opt/AcmeDesk/resources/app.asar.unpacked/build/brand', 'mark.png') })
   })
 
   it('rejects a packaged brand without its fields', () => {
