@@ -118,6 +118,8 @@ export const MACOS_OFFLINE_FILES = [
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-tool-workspace-dependencies/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/libreoffice-kit/package.json',
+  ...['ppocr_v5_mobile_det.onnx', 'ppocr_v5_mobile_rec.onnx', 'ppocrv5_dict.txt', 'ort/ort-wasm-simd-threaded.wasm']
+    .map(name => `profiles/workdsh/node_modules/workdsh-plugin-library/resources/ocr/${name}`),
 ] as const
 
 function* walk(directory: string): Generator<string> {
@@ -178,8 +180,10 @@ export function auditMacApplication(application: string, arch: 'x64' | 'arm64'):
   const platformPackages = new Map<string, Set<string>>()
   let newest: string | undefined
   let images = 0
+  let anydocEngine = false
   for (const path of walk(application)) {
     const label = relative(application, path)
+    if (basename(path) === `anydoc.darwin-${arch}.node`) anydocEngine = true
     if (basename(path) === 'package.json') {
       const platform = darwinPlatformPackage(path)
       if (platform !== undefined) platformPackages.set(platform.key, (platformPackages.get(platform.key) ?? new Set()).add(platform.arch))
@@ -201,6 +205,7 @@ export function auditMacApplication(application: string, arch: 'x64' | 'arm64'):
   for (const path of required) {
     if (!existsSync(join(application, path))) wrongArchitecture.push(path)
   }
+  if (!anydocEngine) missingOfflineFiles.push(`AnyDoc engine (@firecrawl/anydoc-darwin-${arch})`)
   const missingPlatformPackages = [...platformPackages]
     .filter(([, arches]) => !arches.has(arch) && !arches.has('universal'))
     .map(([key, arches]) => `${key.replace(/\*$/u, arch)} (found ${[...arches].sort().join(', ')})`)

@@ -79,6 +79,7 @@ function application(): string {
   write(join(root, 'workdsh'), elf(['GLIBC_2.2.5', 'GLIBC_2.25']))
   write(join(runtime, 'primary-runtime', 'dependencies', 'node', 'bin', 'node'), elf(['GLIBC_2.28', 'GLIBCXX_3.4.21', 'CXXABI_1.3.11']))
   write(join(runtime, 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'), elf(['GLIBC_2.17']))
+  write(join(runtime, 'profiles', 'workdsh', 'node_modules', '@firecrawl', 'anydoc-linux-x64-gnu', 'anydoc.linux-x64-gnu.node'), elf(['GLIBC_2.17']))
   return root
 }
 
@@ -117,7 +118,7 @@ describe('Linux package audit', () => {
     expect(report.missingOfflineFiles).toEqual([])
     expect(report.wrongArchitecture).toEqual([])
     expect(report.tooNew).toEqual({})
-    expect(report.images).toBe(3)
+    expect(report.images).toBe(4)
     expect(report.newest).toEqual({ GLIBC: '2.28', GLIBCXX: '3.4.21', CXXABI: '1.3.11' })
     expect(report.otherArchitectures).toEqual([join('resources', 'prebuilds', 'linux-arm64', 'addon.node')])
     expect(() => assertLinuxPayload(report)).not.toThrow()

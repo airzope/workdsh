@@ -86,6 +86,7 @@ function application(arch: keyof typeof CPU = 'x64', minimum = '12.0'): string {
   write(join(root, 'Contents', 'MacOS', 'WorkDSH'), thin(arch, '12.0'))
   write(join(runtime, 'primary-runtime', 'dependencies', 'node', 'bin', 'node'), thin(arch, '13.5'))
   write(join(runtime, 'primary-runtime', 'dependencies', 'python', 'bin', 'python3'), universal(['x64', '10.13'], ['arm64', '11.0']))
+  write(join(runtime, 'profiles', 'workdsh', 'node_modules', '@firecrawl', `anydoc-darwin-${arch}`, `anydoc.darwin-${arch}.node`), thin(arch, '10.12'))
   return root
 }
 
@@ -131,7 +132,7 @@ describe('macOS application audit', () => {
     const report = auditMacApplication(root, 'x64')
 
     expect(report).toMatchObject({
-      images: 4,
+      images: 5,
       minimumSystemVersion: '12.0',
       newest: '13.5.0',
       wrongArchitecture: [],

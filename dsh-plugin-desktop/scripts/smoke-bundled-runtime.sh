@@ -44,3 +44,7 @@ HOME="$work" "$node" "$runtime/profiles/workdsh/node_modules/@deepseek-ai/libreo
   convert --input "$work/sample.docx" --output "$work/sample.pdf"
 head -c 5 "$work/sample.pdf" | grep -q '%PDF-'
 echo "LibreOffice Kit converted DOCX to PDF ($(wc -c < "$work/sample.pdf" | tr -d ' ') bytes)"
+
+# The Library's AnyDoc conversion and PaddleOCR recognition through its own
+# packaged modules.
+HOME="$work" "$node" "$(dirname "$0")/smoke-document-engines.mjs" "$runtime/profiles/workdsh/node_modules/workdsh-plugin-library"

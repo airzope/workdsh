@@ -60,6 +60,7 @@ function application(): string {
   for (const path of WINDOWS7_OFFLINE_FILES) write(join(root, 'resources', 'workdsh-runtime', path), '{}')
   write(join(root, 'resources', 'workdsh-runtime', 'profiles', 'workdsh', 'node_modules', '.pnpm', 'kit', 'bin', 'libreoffice-kit.exe'),
     peImage(['KERNEL32.dll', 'MSVCP140_2.dll', 'api-ms-win-crt-runtime-l1-1-0.dll']))
+  write(join(root, 'resources', 'workdsh-runtime', 'profiles', 'workdsh', 'node_modules', '@firecrawl', 'anydoc-win32-x64-msvc', 'anydoc.win32-x64-msvc.node'))
   write(join(root, 'WorkDSH.exe'), peImage(['KERNEL32.dll', 'dwrite.dll', 'ffmpeg.dll']))
   write(join(root, 'ffmpeg.dll'), peImage(['KERNEL32.dll']))
   return root

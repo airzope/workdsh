@@ -1,7 +1,7 @@
 /** Audit a packaged Linux application for Ubuntu 20.04 (glibc 2.31, GCC 10 libstdc++). */
 
 import { closeSync, existsSync, openSync, readSync, readdirSync } from 'node:fs'
-import { join, relative, resolve } from 'node:path'
+import { basename, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /** Newest symbol versions that Ubuntu 20.04 LTS provides. */
@@ -128,6 +128,8 @@ export const LINUX_OFFLINE_FILES = [
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-tool-workspace-dependencies/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/libreoffice-kit/package.json',
+  ...['ppocr_v5_mobile_det.onnx', 'ppocr_v5_mobile_rec.onnx', 'ppocrv5_dict.txt', 'ort/ort-wasm-simd-threaded.wasm']
+    .map(name => `profiles/workdsh/node_modules/workdsh-plugin-library/resources/ocr/${name}`),
 ] as const
 
 /** Findings for one packaged Linux application directory. */
@@ -177,8 +179,10 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
   let images = 0
   // Located by manifest so the check holds for isolated and hoisted pnpm layouts.
   let wasmEngine = false
+  let anydocEngine = false
   for (const path of walk(application)) {
     if (/[\\/]libreoffice-kit-wasm[\\/]package\.json$/u.test(path)) wasmEngine = true
+    if (basename(path) === `anydoc.linux-${arch}-gnu.node`) anydocEngine = true
     const elf = readElfVersionNeeds(path)
     if (elf === undefined) continue
     const label = relative(application, path)
@@ -197,6 +201,7 @@ export function auditLinuxPayload(application: string, arch: 'x64' | 'arm64', ex
     }
   }
   if (!wasmEngine) missingOfflineFiles.push('LibreOffice Kit WebAssembly engine (@deepseek-ai/libreoffice-kit-wasm)')
+  if (!anydocEngine) missingOfflineFiles.push(`AnyDoc engine (@firecrawl/anydoc-linux-${arch}-gnu)`)
   return { application, arch, images, otherArchitectures: otherArchitectures.sort(), wrongArchitecture, missingOfflineFiles, tooNew, newest }
 }
 

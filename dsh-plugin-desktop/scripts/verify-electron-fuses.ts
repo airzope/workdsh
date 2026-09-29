@@ -10,6 +10,7 @@ import { Arch, archFromString, getArchSuffix } from 'builder-util'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { DSH_VERSION } from './runtime-version.mjs'
 
 export interface PackagedRuntimeContext {
@@ -56,6 +57,15 @@ export function smokeBundledWorkdshProfile(context: PackagedRuntimeContext): voi
   if (result.error || result.status !== 0 || !result.stdout.includes(DSH_VERSION)) {
     throw new Error(`Bundled Harness CLI smoke failed: ${String(result.error ?? result.stderr)}`)
   }
+  // The only runtime check of AnyDoc and OCR on Windows, whose CI installs no package.
+  const documents = spawnSync(node, [
+    fileURLToPath(new URL('./smoke-document-engines.mjs', import.meta.url)),
+    join(runtime, 'profiles', 'workdsh', 'node_modules', 'workdsh-plugin-library'),
+  ], { encoding: 'utf8', timeout: 180_000 })
+  if (documents.error || documents.status !== 0) {
+    throw new Error(`Bundled document engine smoke failed: ${String(documents.error ?? documents.stderr)}`)
+  }
+  console.log(documents.stdout.trim())
 }
 
 /** Injectable official fuse reader used by focused tests. */

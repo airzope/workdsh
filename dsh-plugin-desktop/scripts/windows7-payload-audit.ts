@@ -211,6 +211,8 @@ export const WINDOWS7_OFFLINE_FILES = [
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-skill-office/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/dsh-tool-workspace-dependencies/package.json',
   'profiles/workdsh/node_modules/@deepseek-ai/libreoffice-kit/package.json',
+  ...['ppocr_v5_mobile_det.onnx', 'ppocr_v5_mobile_rec.onnx', 'ppocrv5_dict.txt', 'ort/ort-wasm-simd-threaded.wasm']
+    .map(name => `profiles/workdsh/node_modules/workdsh-plugin-library/resources/ocr/${name}`),
 ] as const
 
 /**
@@ -225,6 +227,7 @@ export function auditWindows7Payload(application: string): Windows7AuditReport {
   const files = [...walk(application)]
   const engines = files.filter(path => basename(path).toLowerCase() === 'libreoffice-kit.exe' && basename(dirname(path)) === 'bin')
   if (engines.length === 0) missingOfflineFiles.push('LibreOffice Kit engine (bin/libreoffice-kit.exe)')
+  if (!files.some(path => basename(path).toLowerCase() === 'anydoc.win32-x64-msvc.node')) missingOfflineFiles.push('AnyDoc engine (@firecrawl/anydoc-win32-x64-msvc)')
   const images = files.filter(path => PE_EXTENSIONS.test(path) && statSync(path).size > 0)
   const shipped = new Set(images.map(path => basename(path).toLowerCase()))
   const unresolvedImports: Record<string, string[]> = {}
