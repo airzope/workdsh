@@ -8,7 +8,7 @@
 
 ## 支持哪些平台？
 
-以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64、分别提供的 macOS arm64 与 x64 版本，以及 Ubuntu 20.04 及以上的 x64（amd64）与 arm64 `.deb` 包；没有 macOS Universal 包。Windows 7 SP1 x64 需借助 VxKex NEXT 运行，见下一节。
+以 [GitHub Releases](https://github.com/techflag/workdsh/releases) 中实际附带的文件为准。当前打包目标是 Windows x64、分别提供的 macOS arm64 与 x64 版本（macOS 15 及以上），以及 Ubuntu 20.04 及以上的 x64（amd64）与 arm64 `.deb` 包；没有 macOS Universal 包。Windows 7 SP1 x64 需借助 VxKex NEXT 运行，见下一节。
 
 ## 能在 Windows 7 上运行吗？
 
@@ -32,6 +32,13 @@ Windows 7 SP1 x64 借助第三方兼容层 [VxKex NEXT](https://github.com/YuZho
 - 本地 SenseVoice 语音转文字同样支持 Ubuntu 20.04。上游 sherpa-onnx 1.13.8 的 x64 绑定需要 glibc 2.32，因此 x64 包内的绑定改为在 Ubuntu 20.04 上从同一版本源码重新编译。
 - 包推荐安装 `fonts-noto-cjk`，以便中文文档正确渲染；使用 `--no-install-recommends` 安装时请自行补装中文字体。
 - Ubuntu 24.04 默认限制非特权用户命名空间；安装脚本会为 WorkDSH 写入 AppArmor 配置，旧系统则按需为 `chrome-sandbox` 设置 SUID。
+
+## 如何在 macOS 上安装？
+
+Apple 芯片选 `arm64.dmg`，Intel 芯片选 `x64.dmg`，支持 macOS 15 及以上。打开 DMG，把应用拖到“应用程序”。
+
+- DMG 未签名。macOS 15 首次打开时会提示无法验证开发者：点“完成”，然后在“系统设置”>“隐私与安全性”底部点“仍要打开”，并用密码确认。之后可正常打开。
+- 两个架构分别在对应芯片的 macOS 15 上原生构建。打包时逐个检查内置文件的 CPU 架构，并要求所需系统版本不高于 macOS 15；然后在 macOS 15 上运行 Electron、Node.js、Python、DSH CLI、语音识别组件，并把 Word 文档离线转换为 PDF。
 
 ## 需要自己安装 Node.js、Python 或 DSH 吗？
 

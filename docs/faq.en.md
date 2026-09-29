@@ -8,7 +8,7 @@ No. WorkDSH is an independent community project built on [DeepSeek Harness](http
 
 ## Which platforms are supported?
 
-Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64, separate macOS arm64 and x64 packages, and Ubuntu 20.04+ x64 (amd64) and arm64 `.deb` packages. There is no macOS Universal package. Windows 7 SP1 x64 runs through VxKex NEXT; see the next section.
+Check the actual assets attached to [GitHub Releases](https://github.com/techflag/workdsh/releases). Current build targets are Windows x64, separate macOS arm64 and x64 packages for macOS 15 and later, and Ubuntu 20.04+ x64 (amd64) and arm64 `.deb` packages. There is no macOS Universal package. Windows 7 SP1 x64 runs through VxKex NEXT; see the next section.
 
 ## Does it run on Windows 7?
 
@@ -32,6 +32,13 @@ Download the package for your CPU (`amd64` for x64, `arm64` for ARM), run `sudo 
 - Local SenseVoice speech-to-text also works on Ubuntu 20.04. Upstream's sherpa-onnx 1.13.8 x64 binding needs glibc 2.32, so the x64 package carries that binding recompiled from the same release's sources on Ubuntu 20.04.
 - The package recommends `fonts-noto-cjk` so Chinese documents render correctly; add Chinese fonts yourself when installing with `--no-install-recommends`.
 - Ubuntu 24.04 restricts unprivileged user namespaces by default; the install script adds an AppArmor profile for WorkDSH, and older systems get a SUID `chrome-sandbox` when needed.
+
+## How do I install it on macOS?
+
+Download `arm64.dmg` for Apple silicon or `x64.dmg` for Intel; macOS 15 and later are supported. Open the DMG and drag the app to Applications.
+
+- The DMG is unsigned. On first launch macOS 15 reports that it cannot verify the developer: click Done, open System Settings > Privacy & Security, click Open Anyway at the bottom, and confirm with your password. Later launches open normally.
+- Each architecture is built natively on macOS 15 with its own CPU. Packaging checks the CPU architecture of every bundled file and rejects any that needs a newer system than macOS 15. The package then runs Electron, Node.js, Python, the DSH CLI, and the speech-recognition component on macOS 15, and converts a Word document to PDF offline.
 
 ## Must I install Node.js, Python, or DSH myself?
 
