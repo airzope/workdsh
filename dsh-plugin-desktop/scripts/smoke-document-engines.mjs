@@ -21,12 +21,17 @@ context.fillStyle = '#ffffff'
 context.fillRect(0, 0, 1100, 200)
 context.fillStyle = '#111111'
 context.font = 'bold 60px sans-serif'
-context.fillText('INVOICE 2026-0929', 60, 120)
+const expected = 'INVOICE 2026-0929'
+context.fillText(expected, 60, 120)
+// The host's sans-serif font decides the glyph shapes; with some fonts O and 0
+// (or I and 1) are indistinguishable, which says nothing about the engine.
+const glyphs = text => text.toUpperCase().replace(/O/gu, '0').replace(/[IL|]/gu, '1').replace(/\s+/gu, ' ').trim()
 const started = performance.now()
+let recognized
 try {
-  const recognized = await convertToMarkdown('image', new Uint8Array(canvas.toBuffer('image/png')), undefined, defaultConverterServices)
-  if (!recognized.markdown.includes('INVOICE 2026-0929')) throw new Error(`OCR returned ${JSON.stringify(recognized.markdown)}`)
+  recognized = await convertToMarkdown('image', new Uint8Array(canvas.toBuffer('image/png')), undefined, defaultConverterServices)
+  if (!glyphs(recognized.markdown).includes(glyphs(expected))) throw new Error(`OCR returned ${JSON.stringify(recognized.markdown)}`)
 } finally {
   await sharedOcr.close()
 }
-console.log(`AnyDoc converted CSV; PaddleOCR recognized "INVOICE 2026-0929" in ${String(Math.round(performance.now() - started))} ms`)
+console.log(`AnyDoc converted CSV; PaddleOCR read ${JSON.stringify(recognized.markdown.trim())} in ${String(Math.round(performance.now() - started))} ms`)
