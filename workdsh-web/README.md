@@ -5,19 +5,19 @@
 
 WorkDSH is an open-source AI workspace built on the official DeepSeek Harness. Organize conversations, material and capabilities in projects, reuse your local Library, and review editable deliverables alongside the task.
 
-**Desktop v2.0.6-alpha.3 · Web/plugins v0.1.0-alpha.16 · Alpha preview**
+**Desktop v2.0.6-alpha.4 · Web/plugins v0.1.0-alpha.17 · Alpha preview**
 
-[Desktop downloads](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3) · [Web/plugin download](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.16) · [Release notes](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.16) · [Quick start](#quick-start) · [Website](https://techflag.github.io/workdsh/) · [Gitee mirror](https://gitee.com/techflag/workdsh)
+[Desktop downloads](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4) · [Web/plugin download](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.17) · [Release notes](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.17) · [Quick start](#quick-start) · [Website](https://techflag.github.io/workdsh/) · [Gitee mirror](https://gitee.com/techflag/workdsh)
 
 ## Download WorkDSH Desktop
 
 | System | Installer |
 | --- | --- |
-| Windows x64 | [Download Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.3-x64-Setup.exe) |
-| macOS Apple Silicon | [Download arm64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.3-arm64.dmg) |
-| macOS Intel | [Download x64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.3-x64.dmg) |
+| Windows x64 | [Download Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.4-x64-Setup.exe) |
+| macOS Apple Silicon | [Download arm64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.4-arm64.dmg) |
+| macOS Intel | [Download x64 DMG](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.4-x64.dmg) |
 
-These Alpha installers bundle WorkDSH v0.1.0-alpha.16 and the official Harness 0.2.0-rc.1 Profile, including Node and Python. The task browser reuses Electron; no second browser binary is bundled. macOS DMGs are unsigned previews; checksums are in the [Desktop release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3).
+These Alpha installers bundle WorkDSH v0.1.0-alpha.17 and the official Harness 0.2.0-rc.1 Profile, including Node and Python. The task browser reuses Electron; no second browser binary is bundled. macOS DMGs are unsigned previews; checksums are in the [Desktop release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4).
 
 ![WorkDSH project home — full application in dark mode](assets/screenshots/workdsh-projects-alpha8-dark.png)
 
@@ -32,7 +32,7 @@ These Alpha installers bundle WorkDSH v0.1.0-alpha.16 and the official Harness 0
 | Office deliverables | Preview and edit supported document, presentation, spreadsheet, HTML and PDF working copies. Format fidelity varies. |
 | Activity | Inspect native task and child-agent activity; an expert-team label alone does not mean multiple agents are executing. |
 
-The alpha.16 bundle includes **12 installable modules**, including Projects, Library and the managed browser session provider, built against the published Harness 0.2.0-rc.1 APIs. Native attachment, input and send behavior remain owned by Harness. In Desktop, Agent browser work appears in the right sidebar on the same Electron page used by its tools.
+The alpha.17 bundle includes **12 installable modules**, including Projects, Library and the managed browser session provider, built against the published Harness 0.2.0-rc.1 APIs. Native attachment, input and send behavior remain owned by Harness. In Desktop, Agent browser work appears in the right sidebar on the same Electron page used by its tools.
 
 ## Screenshots
 
@@ -68,7 +68,7 @@ Earlier local preview showing the artifact workflow; it is not an alpha.8 accept
 
 Requirements: Node.js `^22.19.0 || >=24.0.0`, Corepack/pnpm and the official `dsh` CLI **0.2.0-rc.1**.
 
-1. Download all 12 `.tgz` packages, `release-manifest.json`, `SHA256SUMS` and `install-workdsh.mjs` from the [alpha.16 release](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.16) into one directory.
+1. Download all 12 `.tgz` packages, `release-manifest.json`, `SHA256SUMS` and `install-workdsh.mjs` from the [alpha.17 release](https://github.com/airzope/workdsh/releases/tag/v0.1.0-alpha.17) into one directory.
 2. For an upgrade, stop the target Profile and keep a recoverable backup of its configuration and data.
 3. Run from the download directory:
 
