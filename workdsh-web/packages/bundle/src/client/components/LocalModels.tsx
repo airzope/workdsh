@@ -63,10 +63,17 @@ function useLocalModels(intervalMs: number) {
   return { load, busy, failure, request };
 }
 
+const folderCss = `
+.wd-local-folder{display:flex;align-items:center;gap:8px;min-width:0}
+.wd-local-folder code{flex:1;min-width:0;padding:6px 10px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-interactive-bg-hover);font-size:12px;line-height:20px;color:var(--dsw-alias-label-primary);white-space:normal;overflow-wrap:anywhere}
+.wd-local-folder button{flex:none}
+`;
+
 function CopyPath({ path }: { readonly path: string }) {
   const [copied, setCopied] = React.useState(false);
   return (
     <div className="wd-local-folder">
+      <style>{folderCss}</style>
       <code title={path}>{path}</code>
       <Button size="sm" variant="outline" onClick={() => { void writeClipboard(path).then(done => { setCopied(done); }); }}>
         {copied ? '已复制' : '复制路径'}
@@ -91,8 +98,7 @@ const onboardingCss = `
 .wd-local-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
 .wd-local-error{color:var(--dsw-alias-state-error-primary)!important;margin-top:12px!important;font-size:13px!important;line-height:20px!important;overflow-wrap:anywhere}
 .wd-local-ready{color:var(--dsw-alias-state-success-primary)!important}
-.wd-local-folder{display:flex;align-items:center;gap:8px;margin-top:12px;min-width:0}
-.wd-local-folder code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 10px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-settings-card-fill);font-size:12px;line-height:20px;color:var(--dsw-alias-label-primary)}
+.wd-local-onboarding .wd-local-folder{margin-top:12px}
 .wd-local-tips{margin:12px 0 0;padding-left:18px;font-size:13px;line-height:22px;color:var(--dsw-alias-label-tertiary)}
 `;
 
@@ -121,6 +127,11 @@ export function LocalModelSignIn({ complete, useApiKey }: { readonly complete: (
 
   if (load.kind !== 'ready') return null;
   const status = load.status;
+
+  const chooseApiKey = (): void => {
+    void request({ useAsDefault: false });
+    useApiKey();
+  };
 
   const start = async (): Promise<void> => {
     const next = await request({ ...(status.mode === 'managed' ? { enabled: true } : {}), useAsDefault: true });
@@ -163,7 +174,7 @@ export function LocalModelSignIn({ complete, useApiKey }: { readonly complete: (
         <h2>本地模型服务没有启动</h2>
         <p className="wd-local-error">{status.error ?? failure ?? 'llama-server 没有响应。'}</p>
         <div className="wd-local-actions">
-          <Button variant="outline" disabled={busy} onClick={useApiKey}>改用 API Key</Button>
+          <Button variant="outline" disabled={busy} onClick={chooseApiKey}>改用 API Key</Button>
           <Button variant="primary" disabled={busy} onClick={() => { void start(); }}>{busy ? '正在启动…' : '重试'}</Button>
         </div>
       </>
@@ -192,7 +203,7 @@ export function LocalModelSignIn({ complete, useApiKey }: { readonly complete: (
           <li>模型在第一次使用时加载，闲置 10 分钟后自动释放内存。</li>
         </ul>
         <div className="wd-local-actions">
-          <Button variant="outline" onClick={useApiKey}>改用 API Key</Button>
+          <Button variant="outline" onClick={chooseApiKey}>改用 API Key</Button>
           <Button variant="primary" onClick={complete}>完成</Button>
         </div>
       </>
@@ -218,7 +229,6 @@ const cardCss = `
 .wd-local-card-tag{flex:none;padding:1px 6px;border:0.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-xs,4px);font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
 .wd-local-card-switch{margin-left:auto}
 .wd-local-card p{margin:0;font-size:13px;line-height:20px;color:var(--dsw-alias-label-tertiary)}
-.wd-local-card .wd-local-folder{margin-top:0}
 .wd-local-card .wd-local-error{margin-top:0!important}
 .wd-local-card-actions{display:flex;gap:8px}
 `;
