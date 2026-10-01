@@ -1,5 +1,5 @@
 # Bilingual-pair consistency record: the git blob hash of each side as of the last
 # confirmed-consistent state. Both languages carry equal authority. Update both files
 # and re-record their hashes with git hash-object after editing either side.
-2026-10-01-runtime-profile-patch-settings.md: 7555019dbb22f7045cfc7b8ecc0d68d2cfee719d
-2026-10-01-runtime-profile-patch-settings.zh.md: e7585abe95bb17bdce91ea36ab678fa2baa02833
+2026-10-01-bundled-sensevoice-int4.md: 8542fcd86fe2623e06965dc2aa4126196ea5e19c
+2026-10-01-bundled-sensevoice-int4.zh.md: 278d0dc00939fb3187ae45094ffa194adfdc1319

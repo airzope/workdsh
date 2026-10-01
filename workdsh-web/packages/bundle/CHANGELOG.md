@@ -5,6 +5,7 @@
 - `workdsh-bundle/local-models` 在收到 `llama-server` 路径（`WORKDSH_LLAMA_SERVER`）、模型文件夹和状态文件夹时自行启动服务：经 DSH 的 subprocess 服务运行，随 Host 一起停止；用户的选择保存在状态文件夹的 `local-models.json`。用户尚未选择时，模型文件夹中有 GGUF 模型就自动启动。`/api/workdsh-local-models` 提供状态，并接受 `{ enabled, useAsDefault }`。服务启动失败时报告日志最后一行，等待用户重试。
 - “设置 → 模型”页底部新增本地模型卡片：显示服务状态、模型列表与模型文件夹路径，可开关服务，并可设为新会话的默认模型。
 - 仍可用 `WORKDSH_LLAMA_BASE_URL` 指向自行运行的路由服务，此时只能设为默认，不能从界面启停。
+- 语音输入：Profile 中新增 `speech-to-text-sensevoice` 行，从 `WORKDSH_SENSEVOICE_MODEL_DIR` 与 `WORKDSH_SENSEVOICE_VAD` 读取模型文件夹和 VAD 路径。Desktop 据此使用内置的 SenseVoiceSmall INT4 权重，无需下载模型；未设置这两个变量时仍照常下载。
 
 ## 0.1.0-alpha.55 — 2026-09-29
 

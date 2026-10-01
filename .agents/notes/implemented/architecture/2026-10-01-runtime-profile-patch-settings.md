@@ -1,4 +1,4 @@
-# Agent Note: Settings survive launches in the runtime Profile patch
+# Agent Note: Settings and bundle choices survive launches in the runtime Profile
 
 Status: implemented
 
@@ -18,6 +18,8 @@ The carrier now owns only the bundled part of the file (`src/profile-patch.ts`):
 
 Profiles from earlier releases have no record of the bundled file. The first launch of a new build merges them the same way, so the Settings saved in the last session before the update survive.
 
+The Plugins page turns an optional bundle, such as Voice Input, on or off by editing `dsh.profile.bundles` in the Profile's `package.json`, which the carrier also copied over at every launch. `src/profile-manifest.ts` treats it the same way. It records the bundled file as `.workdsh-bundled-package.json` and leaves the Profile's file alone while the bundled one is unchanged. On an update it takes the new bundled file, adds the bundles the user added and drops the ones the user removed. Without a record, it keeps additions and removes nothing.
+
 ## Constraints
 
 - A user change inside a row the bundled file owns, such as the configuration of a plugin the WorkDSH Profile inserts, is kept until the next update of the bundled file and then replaced; the backup keeps it.
@@ -26,4 +28,4 @@ Profiles from earlier releases have no record of the bundled file. The first lau
 
 ## Verification
 
-`tests/profile-patch.spec.ts` covers the split, the merge with and without a record, installation, unchanged launches, updates and replacement of an unreadable file. With the staged Profile, a headless run acknowledged the welcome notice and chose a local default model; after a restart the patch was reported unchanged, the notice stayed acknowledged and the default stayed. Merging the alpha.16 bundled patch with a patch DSH had rewritten kept the notice acknowledgement row.
+`tests/profile-patch.spec.ts` and `tests/profile-manifest.spec.ts` cover the split, the merge with and without a record, installation, unchanged launches, updates and replacement of an unreadable file. With the staged Profile, a headless run acknowledged the welcome notice and chose a local default model; after a restart the patch was reported unchanged, the notice stayed acknowledged and the default stayed. Merging the alpha.16 bundled patch with a patch DSH had rewritten kept the notice acknowledgement row. Voice Input turned on from the Plugins page stayed on after a restart, and its microphone transcribed through the bundled SenseVoice weights.

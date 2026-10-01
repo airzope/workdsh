@@ -49,6 +49,17 @@ The installers bundle the llama.cpp model server, so you can run open models off
 - The server listens only on the loopback address, with a key generated at each launch. Its log is `llama/server.log`, next to the models folder; when the server fails to start, the local models card shows the log's last line.
 - Tool use depends on the model; smaller models may not complete multi-step tasks reliably.
 
+## Voice input
+
+The installers bundle the SenseVoiceSmall speech recognition model (INT4-quantized, about 155 MB) and the Silero voice activity detector, so recordings are recognized on your computer without downloading a model:
+
+1. Open Plugins in the sidebar and turn on "语音输入" (Voice input). It stays on across restarts and updates.
+2. With a workspace selected, click the microphone right of the model selector, allow microphone access, and click "停止并识别" (stop and recognize) when you finish; the text is inserted into the message box.
+
+- It recognizes automatically, or Chinese, English, Cantonese, Japanese or Korean, chosen in the Voice input plugin details.
+- The plugin details call the recognizer "SenseVoiceSmall (INT8)": DSH names model files only by INT8 and FP32, so the bundled INT4 weights keep the INT8 file name. The note "首次使用需安装依赖" (first use needs installing dependencies) in the plugin list also comes from DSH; the bundled model needs no installation.
+- Recognition runs on the CPU and takes about 300 MB of memory once loaded; it is released when idle.
+
 ## Data and plugins
 
 Runtime data lives in a DSH home under the local application-data directory. The installer contains the pinned Profile dependencies; the Electron carrier does not install a second DSH npm tree into `app.asar`. Models and external tools may access the network according to user configuration.

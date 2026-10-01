@@ -1,4 +1,4 @@
-# Agent Note：设置在运行时 Profile patch 中跨启动保留
+# Agent Note：设置与组合包选择在运行时 Profile 中跨启动保留
 
 Status: implemented
 
@@ -18,6 +18,8 @@ DSH 把每一项设置改动保存在当前 Profile 的 `cordis.patch.yml` 中�
 
 早期版本的 Profile 没有内置文件的记录。新版本首次启动时按同样的方式合并，因此更新前最后一次会话中保存的设置得以保留。
 
+“插件”页通过修改 Profile `package.json` 中的 `dsh.profile.bundles` 来开启或关闭可选组合包（例如语音输入），而载体以前同样在每次启动时覆盖这个文件。`src/profile-manifest.ts` 以同样的方式处理它：把内置文件记录为 `.workdsh-bundled-package.json`，内置文件未变时不改动 Profile 中的文件；更新时采用新的内置文件，加入用户添加的组合包，去掉用户移除的组合包。没有记录时，保留新增的组合包，不移除任何组合包。
+
 ## Constraints
 
 - 用户在内置文件拥有的行中所做的改动（例如 WorkDSH Profile 插入的插件的配置）保留到内置文件下次更新为止，之后被替换；备份中仍有这些改动。
@@ -26,4 +28,4 @@ DSH 把每一项设置改动保存在当前 Profile 的 `cordis.patch.yml` 中�
 
 ## Verification
 
-`tests/profile-patch.spec.ts` 覆盖拆分、有无记录时的合并、安装、未变化的启动、更新以及替换无法读取的文件。在已放置的 Profile 上，无头运行确认了欢迎提示并选择了本地默认模型；重启后 patch 报告为未变化，提示仍为已确认，默认模型也保持不变。把 alpha.16 的内置 patch 与 DSH 改写过的 patch 合并时，保留了提示确认的那一行。
+`tests/profile-patch.spec.ts` 与 `tests/profile-manifest.spec.ts` 覆盖拆分、有无记录时的合并、安装、未变化的启动、更新以及替换无法读取的文件。在已放置的 Profile 上，无头运行确认了欢迎提示并选择了本地默认模型；重启后 patch 报告为未变化，提示仍为已确认，默认模型也保持不变。把 alpha.16 的内置 patch 与 DSH 改写过的 patch 合并时，保留了提示确认的那一行。在“插件”页开启的语音输入在重启后仍然开启，其麦克风通过内置的 SenseVoice 权重完成识别。
