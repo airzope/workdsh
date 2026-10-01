@@ -319,11 +319,27 @@ export function apply(ctx: Context, config: Config = {}): void {
     const service = defaults();
     if (!preference.useAsDefault || models.length === 0 || service === undefined) return;
     const current = service.currentSelection();
+    let previousDefault = preference.previousDefault;
     if (current.provider !== route || !models.some(model => model.id === current.model)) {
+      if (current.provider !== route) previousDefault = { ...current };
       await service.saveSelection({ provider: route, model: models[0].id });
       ctx.logger.info(`workdsh-local-models: new agents now start on ${models[0].id}`);
     }
     const { useAsDefault: _done, ...rest } = preference;
+    remember({ ...rest, ...(previousDefault === undefined ? {} : { previousDefault }) });
+  };
+
+  // Turning local models off puts back the default they replaced.
+  const restoreDefault = async (): Promise<void> => {
+    const service = defaults();
+    const previous = preference.previousDefault;
+    if (service === undefined || previous === undefined) return;
+    if (service.currentSelection().provider === route) {
+      // The stored selection is one this service returned, brand included.
+      await service.saveSelection(previous as Parameters<typeof service.saveSelection>[0]);
+      ctx.logger.info(`workdsh-local-models: new agents start on ${previous.provider}/${previous.model} again`);
+    }
+    const { previousDefault: _restored, ...rest } = preference;
     remember(rest);
   };
 
@@ -510,6 +526,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     }
     remember(next);
     await reconcile();
+    if (body.enabled === false) await restoreDefault().catch((cause: unknown) => { ctx.logger.warn(`workdsh-local-models: ${String(cause)}`); });
     return Response.json(status(), { headers: { 'cache-control': 'no-store' } });
   };
 

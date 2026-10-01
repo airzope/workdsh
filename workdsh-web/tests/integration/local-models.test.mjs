@@ -241,8 +241,8 @@ test('finds GGUF models in the folder and its subfolders, and keeps the choice',
     assert.equal(hasGgufModels(root), true);
 
     assert.deepEqual(readPreference(root), {});
-    writePreference(root, { enabled: false, useAsDefault: true });
-    assert.deepEqual(readPreference(root), { enabled: false, useAsDefault: true });
+    writePreference(root, { enabled: false, useAsDefault: true, previousDefault: { provider: 'deepseek', model: 'chat', reasoningEffort: 'high' } });
+    assert.deepEqual(readPreference(root), { enabled: false, useAsDefault: true, previousDefault: { provider: 'deepseek', model: 'chat', reasoningEffort: 'high' } });
     await writeFile(join(root, 'local-models.json'), '{broken');
     assert.deepEqual(readPreference(root), {});
     assert.equal(lastLogLine('loading\nerror: model is corrupt\n\n'), 'error: model is corrupt');
@@ -366,15 +366,19 @@ test('starts the bundled server when the user chooses local models, and remember
     assert.match(host.user.providers['llama-local'].baseURL, /^http:\/\/127\.0\.0\.1:\d+\/v1$/u);
     await host.until(() => host.selection.provider === 'llama-local');
     assert.deepEqual(host.selection, { provider: 'llama-local', model: 'tiny' });
-    assert.deepEqual(readPreference(stateDir), { enabled: true });
+    assert.deepEqual(readPreference(stateDir), { enabled: true, previousDefault: { provider: 'deepseek-official', model: 'deepseek-flash' } });
     assert.equal((await host.call('GET')).body.isDefault, true);
 
-    // Turning it off stops the server, removes the route and is remembered.
+    // Turning it off stops the server, removes the route, puts the previous
+    // default back and is remembered.
     const off = await host.call('POST', { enabled: false });
     assert.equal(off.body.state, 'stopped');
     assert.equal(off.body.enabled, false);
+    assert.equal(off.body.isDefault, false);
     assert.equal(fake.live, 0);
     assert.equal(host.user.providers['llama-local'], undefined);
+    assert.deepEqual(host.selection, { provider: 'deepseek-official', model: 'deepseek-flash' });
+    assert.deepEqual(readPreference(stateDir), { enabled: false });
     host.dispose();
 
     // The next launch honours the choice although the folder holds a model.

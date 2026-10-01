@@ -32,6 +32,8 @@ export interface LocalModelsPreference {
   enabled?: boolean;
   /** Make the first local model the default once one is served. */
   useAsDefault?: boolean;
+  /** The default a local model replaced, restored when local models are turned off. */
+  previousDefault?: { provider: string; model: string; reasoningEffort?: string };
 }
 
 /**
@@ -155,9 +157,14 @@ export function hasGgufModels(modelsDir: string): boolean {
 export function readPreference(stateDir: string): LocalModelsPreference {
   try {
     const value = JSON.parse(readFileSync(join(stateDir, PREFERENCE_FILE), 'utf8')) as Record<string, unknown>;
+    const previous = value.previousDefault as Record<string, unknown> | undefined;
+    const previousDefault = typeof previous?.provider === 'string' && typeof previous.model === 'string'
+      ? { provider: previous.provider, model: previous.model, ...(typeof previous.reasoningEffort === 'string' ? { reasoningEffort: previous.reasoningEffort } : {}) }
+      : undefined;
     return {
       ...(typeof value.enabled === 'boolean' ? { enabled: value.enabled } : {}),
       ...(value.useAsDefault === true ? { useAsDefault: true } : {}),
+      ...(previousDefault === undefined ? {} : { previousDefault }),
     };
   } catch {
     return {};
