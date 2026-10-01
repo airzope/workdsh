@@ -103,5 +103,19 @@ pinned by SHA-256. The Ubuntu builds are compiled by WorkDSH from the same
 commit in `ubuntu:20.04` (`scripts/build-llama-linux.sh`) without OpenSSL,
 OpenMP or the web UI.
 
+Every installer includes `workdsh-runtime/speech/sensevoice`, which DSH's local
+speech-to-text loads instead of downloading a model:
+
+- `model.int8.onnx` is **SenseVoiceSmall** (`iic/SenseVoiceSmall`) by Alibaba
+  Group's FunAudioLLM team, [SenseVoice](https://github.com/FunAudioLLM/SenseVoice),
+  in the ONNX export of [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)
+  (`sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17`). WorkDSH quantized its
+  weights to 4 bits (`scripts/sensevoice/quantize.py`); the file keeps the name of
+  DSH's INT8 weights. It is used and shared under the **FunASR Model Open Source
+  License** 1.1 (`LICENSE-FunASR-MODEL`), which requires keeping the source,
+  author and model name. `tokens.txt` comes from the same export.
+- `silero_vad.onnx` is the [Silero VAD](https://github.com/snakers4/silero-vad),
+  MIT License (`LICENSE-silero-vad`).
+
 This file intentionally does not freeze a dependency inventory from an older
 DSH release. Check the bundled Profile and its license files when publishing.

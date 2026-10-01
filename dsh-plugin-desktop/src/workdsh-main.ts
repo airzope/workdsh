@@ -20,6 +20,7 @@ import { brandEnvironment, readPackagedBrand } from './brand.ts'
 import { ensureModelsDirectory, llamaExecutable, localModelsEnvironment } from './llama.ts'
 import { syncProfileManifest } from './profile-manifest.ts'
 import { syncProfilePatch } from './profile-patch.ts'
+import { speechEnvironment } from './speech.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
@@ -72,6 +73,12 @@ function bundledLlama(): string {
   const overridden = process.env.WORKDSH_LLAMA
   if (overridden !== undefined && overridden.length > 0) return overridden
   return join(process.resourcesPath, 'workdsh-runtime', 'llama')
+}
+
+function bundledSpeech(): string {
+  const overridden = process.env.WORKDSH_SPEECH
+  if (overridden !== undefined && overridden.length > 0) return overridden
+  return join(process.resourcesPath, 'workdsh-runtime', 'speech', 'sensevoice')
 }
 
 function modelsDirectory(): string {
@@ -222,6 +229,7 @@ function startRuntime(home: string, profileDir: string, localModels: Record<stri
       DSH_ELECTRON_EXECUTABLE: process.execPath,
       ...brandEnvironment(brand, BRAND_DIRECTORY),
       WORKDSH_MEDIA_TOOLS: bundledMediaTools(),
+      ...speechEnvironment(bundledSpeech()),
       ...localModels,
       ELECTRON_RUN_AS_NODE: undefined,
     },

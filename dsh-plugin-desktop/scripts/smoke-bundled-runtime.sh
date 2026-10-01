@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run every bundled runtime of an installed WorkDSH application headlessly:
 # Electron (as Node), Node.js, Python with the Office libraries, the DSH CLI,
-# the SenseVoice speech-to-text binding, an offline DOCX-to-PDF conversion
+# the SenseVoice speech-to-text binding and its bundled INT4 weights, an offline DOCX-to-PDF conversion
 # through the bundled LibreOffice Kit engine, and FFmpeg audio and video work. Electron and Node must run as
 # the expected CPU, which catches packages assembled for another architecture.
 # Usage: smoke-bundled-runtime.sh <electron-executable> <workdsh-runtime-directory> <x64|arm64>
@@ -38,6 +38,8 @@ const resampled = new sherpa.LinearResampler(16000, 8000).flush(wave.samples)
 if (wave.sampleRate !== 16000 || wave.samples.length !== 16000 || Math.abs(resampled.length - 8000) > 8) process.exit(1)
 console.log(`SenseVoice speech-to-text binding (sherpa-onnx ${sherpa.version}) runs`)
 ' "$(dirname "$sherpa")" "$work/tone.wav"
+# The bundled SenseVoiceSmall INT4 weights and Silero VAD through the same binding.
+"$node" "$(dirname "$0")/smoke-speech.mjs" "$runtime/speech/sensevoice" "$(dirname "$sherpa")"
 
 "$python" -I -B -c 'import docx, sys; d = docx.Document(); d.add_heading("WorkDSH", 0); d.add_paragraph("Offline conversion"); d.save(sys.argv[1])' "$work/sample.docx"
 HOME="$work" "$node" "$runtime/profiles/workdsh/node_modules/@deepseek-ai/libreoffice-kit/lib/cli.js" \

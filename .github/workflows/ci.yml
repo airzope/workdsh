@@ -147,8 +147,42 @@ jobs:
   # Windows-only logic and unsigned NSIS build on a real Windows runner:
   # updates, window options, pwsh sandbox, volume diagnostics, and packaging.
   # The package gate runs once before packaging.
-  desktop-windows:
+  # SenseVoiceSmall INT4 weights for every installer, made once from the FP32
+  # export DSH pins (scripts/prepare-workdsh-speech.ts) and cached per recipe.
+  speech-model:
     needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.23.2
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v6
+        with:
+          path: dsh-plugin-desktop/build/.workdsh-speech-cache
+          key: sensevoice-int4-${{ hashFiles('dsh-plugin-desktop/scripts/prepare-workdsh-speech.ts', 'dsh-plugin-desktop/scripts/sensevoice/*') }}
+      - name: Make or reuse the SenseVoice INT4 weights
+        env:
+          WORKDSH_PYTHON: python
+        run: node dsh-plugin-desktop/scripts/prepare-workdsh-speech.ts --cache-only
+      - name: Hand the weights to the packaging jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: workdsh-speech-cache
+          path: dsh-plugin-desktop/build/.workdsh-speech-cache
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+  desktop-windows:
+    needs: [changes, speech-model]
     if: needs.changes.outputs.desktop == 'true'
     runs-on: windows-latest
     steps:
@@ -168,6 +202,12 @@ jobs:
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+      # The SenseVoice INT4 weights this run made once; see the speech-model job.
+      - name: Fetch the bundled SenseVoice weights
+        uses: actions/download-artifact@v5
+        with:
+          name: workdsh-speech-cache
+          path: dsh-plugin-desktop/build/.workdsh-speech-cache
       - name: Package Windows through the single release script
         timeout-minutes: 90
         run: node scripts/package-desktop-release.mjs --source=${{ github.ref_type == 'tag' && 'published' || 'local' }}
@@ -210,7 +250,7 @@ jobs:
   # runs the DMG's runtimes on the oldest supported macOS. The signed release
   # is built manually on a credentialed machine; no signing secrets reach this job.
   desktop-macos:
-    needs: changes
+    needs: [changes, speech-model]
     if: needs.changes.outputs.desktop == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 75
@@ -239,6 +279,12 @@ jobs:
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+      # The SenseVoice INT4 weights this run made once; see the speech-model job.
+      - name: Fetch the bundled SenseVoice weights
+        uses: actions/download-artifact@v5
+        with:
+          name: workdsh-speech-cache
+          path: dsh-plugin-desktop/build/.workdsh-speech-cache
       # Spotlight indexes each freshly built disk image, which can keep it busy
       # so that dmgbuild's hdiutil detach fails with "Resource busy".
       - name: Stop Spotlight indexing on the runner
@@ -273,7 +319,7 @@ jobs:
   # clean Ubuntu 20.04 (the oldest supported release) and 24.04 containers. The
   # package script's ELF audit already rejects symbols newer than glibc 2.31.
   desktop-linux:
-    needs: changes
+    needs: [changes, speech-model]
     if: needs.changes.outputs.desktop == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
@@ -302,6 +348,12 @@ jobs:
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+      # The SenseVoice INT4 weights this run made once; see the speech-model job.
+      - name: Fetch the bundled SenseVoice weights
+        uses: actions/download-artifact@v5
+        with:
+          name: workdsh-speech-cache
+          path: dsh-plugin-desktop/build/.workdsh-speech-cache
       # The llama.cpp server is built from source in ubuntu:20.04 (the official
       # Ubuntu builds need glibc 2.34); the cache holds it per pinned input.
       - uses: actions/cache@v6
@@ -437,7 +489,8 @@ jobs:
           - Desktop 使用锁定的官方 DSH 0.2.0-rc.1 Profile；内置 Node.js 和 Python，不额外打包浏览器。
           - 内置 FFmpeg 8.1.2 与 FFprobe（GPLv3，作为独立程序运行）：可在对话中转换、压缩、无损剪辑、合并音视频并提取音频；对应源码见安装目录 media/SOURCES.md 与本版本附带的源码归档。
           - 内置 llama.cpp（b11247）本地模型服务：首次启动时可选择“启动本地模型”或填写 API Key，也可在“设置 → 模型”中随时开关。把 GGUF 模型文件放进用户数据目录下的 models 文件夹，几秒后即可在模型列表中选择“本地模型 (llama.cpp)”，无需联网或 API 密钥。服务仅监听本机回环地址，并使用每次启动随机生成的密钥。Windows 版可用 Vulkan 调用显卡，macOS Apple Silicon 使用 Metal。
-          - 白牌构建的名称与标志同时用于侧栏和对话首页；默认模型、模型路由等设置在重启和升级后保留。
+          - 内置 SenseVoiceSmall INT4 语音识别模型（约 155 MB，比 DSH 默认下载的 INT8 小约三分之一）与 Silero 语音检测模型：在“插件”中开启语音输入即可离线识别，无需下载模型。
+          - 白牌构建的名称与标志同时用于侧栏和对话首页；默认模型、模型路由、已开启的插件（如语音输入）等设置在重启和升级后保留。
           - 提供 Windows x64 安装包，以及 macOS Intel x64、Apple Silicon arm64 未签名 DMG（macOS 15 及以上，分别在对应架构的 macOS 15 上构建并验证）。
           - 提供 Ubuntu 20.04 及以上 x64（amd64）与 arm64 的 .deb 安装包，内置 Node.js、Python 与办公技能，并在 Ubuntu 20.04 与 24.04 中安装验证。
           - 提供 Windows 7 SP1 x64 全量离线安装包：内置 VxKex NEXT 1.2.3.2463 与 Microsoft VC++ 运行库，缺失时自动安装；Windows 7 支持为尽力支持。
