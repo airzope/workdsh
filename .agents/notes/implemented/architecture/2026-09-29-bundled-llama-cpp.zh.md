@@ -6,19 +6,26 @@ Status: implemented
 
 ## Decision
 
-每个 Desktop 安装包都在 `workdsh-runtime/llama` 中携带 llama.cpp `b11247` 的 `llama-server`。载体以路由模式运行它，服务用户数据中的模型文件夹。该文件夹中的每个 GGUF 文件都会成为 `llama-local` 路由的一个模型，在模型列表中显示为“本地模型 (llama.cpp)”。无需联网，也无需 API 密钥。
+每个 Desktop 安装包都在 `workdsh-runtime/llama` 中携带 llama.cpp `b11247` 的 `llama-server`。它以路由模式运行，服务用户数据中的模型文件夹。该文件夹中的每个 GGUF 文件都会成为 `llama-local` 路由的一个模型，在模型列表中显示为“本地模型 (llama.cpp)”。无需联网，也无需 API 密钥。
 
 工作由两部分分担，因此没有另写一个模型客户端：
 
-- **载体**（`src/llama.ts`）负责进程与安全：
+- **载体**（`src/llama.ts`）负责准备与交接：
+  - 通过 `llama/manifest.json` 找到已放置的服务；
   - 创建 `<userData>/models`，并放入中英双语的 `README.txt`；
-  - 在 `127.0.0.1` 的空闲端口监听，每次启动生成新的 API 密钥；
-  - 等待 `/health` 就绪后，才以 `WORKDSH_LLAMA_BASE_URL`、`WORKDSH_LLAMA_API_KEY`、`WORKDSH_LLAMA_MODELS_DIR` 和 `WORKDSH_LLAMA_CONTEXT_SIZE` 启动 DSH；
-  - 退出时停止路由服务的整个进程组，模型进程随之停止；
-  - 服务未能启动时，应用照常运行但没有本地模型，原因记录在 `<userData>/llama/server.log`。
-- **WorkDSH Profile**（`workdsh-bundle/local-models`，仅在设置了 `WORKDSH_LLAMA_BASE_URL` 时启用）负责路由。它读取路由服务的 `GET /v1/models?reload=1`，通过 DSH 的 `settings` 服务写入 `llm-pi-ai` 设置中的 `providers.llama-local`。随后由 DSH 自带的 pi-ai 适配器处理 OpenAI 兼容协议。路由里只写密钥所在的环境变量名，不写密钥本身。
+  - 以 `WORKDSH_LLAMA_SERVER`、`WORKDSH_LLAMA_MODELS_DIR`、`WORKDSH_LLAMA_STATE_DIR`（`<userData>/llama`）、`WORKDSH_LLAMA_CONTEXT_SIZE` 和每次启动新生成的 `WORKDSH_LLAMA_API_KEY` 启动 DSH。密钥必须在启动时就在环境中：DSH 从启动环境的快照读取凭据。
+- **WorkDSH Profile**（`workdsh-bundle/local-models`，设置了 `WORKDSH_LLAMA_SERVER` 或 `WORKDSH_LLAMA_BASE_URL` 时启用）负责进程与路由：
+  - 通过 DSH 的 `subprocess` 服务启动服务，监听 `127.0.0.1` 的空闲端口，密钥放在 `LLAMA_API_KEY` 中。该服务把进程与 Host 绑定：Windows 上 Host 退出即关闭 Job，Linux 上使用用户 systemd scope，正常关闭时终止进程。输出写入 `<state>/server.log`；
+  - 用户选择本地模型时运行服务；用户尚未选择时，只要模型文件夹中有 GGUF 模型也会运行。选择保存在 `<state>/local-models.json`；服务启动失败后等待用户再次请求；
+  - 读取 `GET /v1/models?reload=1`，通过 DSH 的 `settings` 服务写入 `llm-pi-ai` 设置中的 `providers.llama-local`。随后由 DSH 自带的 pi-ai 适配器处理 OpenAI 兼容协议。路由里只写密钥所在的环境变量名，不写密钥本身。路由只在服务运行时存在；
+  - `/api/workdsh-local-models` 报告服务状态、模型和文件夹，并接受 `{ enabled, useAsDefault }`。带 `useAsDefault` 时，第一个可用的本地模型会成为 Agent 默认模型，并记下被替换的默认模型；关闭本地模型时恢复它；
+  - Web 部署可用 `WORKDSH_LLAMA_BASE_URL` 指向自己的路由服务。此时插件只同步路由，界面不能启停该服务。
 
-文件夹变化时插件立即重新扫描，并每 30 秒扫描一次作为兜底。文件夹为空时它删除该路由；只有它负责的字段变化时才改写设置。载体每次启动都会改写 Profile 的 `cordis.patch.yml`，插件会在几秒内恢复该路由。
+文件夹变化时插件立即重新扫描，并每 30 秒扫描一次作为兜底。文件夹为空时它删除该路由；只有它负责的字段变化时才改写设置。自 Desktop 2.0.6-alpha.4 起，载体在多次启动之间保留 Profile `cordis.patch.yml` 中的设置改动（见[运行时 Profile patch 的 Agent Note](2026-10-01-runtime-profile-patch-settings.zh.md)），因此路由和默认模型都会保留。
+
+## 首次启动的选择
+
+DSH 的凭据步骤在 API 密钥编辑器之前提供 `settings.models.sign-in` 插槽。WorkDSH 在其中放入“本地模型 (llama.cpp)”与“DeepSeek API Key”两个选项。选择本地模型会启动服务，并请求本地默认模型。文件夹为空时，对话框显示文件夹路径和添加模型的方法；出现第一个模型后，DSH 看到可用的提供商，会自行结束该步骤。部署中没有本地服务时，该插槽直接交给 API 密钥编辑器。“设置 → 模型”页有本地模型服务卡片：状态、模型、文件夹、开关以及“设为默认”。
 
 ## Server settings
 
@@ -48,7 +55,7 @@ Windows 安装包不安装 VC++ 运行库，因此服务旁放有 14.44.35112 �
 - **离线文件：**Linux、macOS 与 Windows 7 审计都要求服务程序、清单和许可证。Windows 7 审计还要求上述运行库 DLL；它只把 `vulkan-1.dll` 作为 `llama/bin/ggml-vulkan.dll` 的导入接受——ggml 在运行时加载该后端，没有驱动时会跳过它。
 - **既有检查：**glibc、`minos` 与 Windows 7 导入检查覆盖每个 llama 映像。
 - **冒烟：**`scripts/smoke-llama.mjs` 生成一个 34 KB 的随机权重 GGUF（`scripts/tiny-gguf.mjs`），服务一个路径含中文和空格的文件夹。它检查密钥、启动后新增的模型，以及一次对话补全。Ubuntu 20.04 与 24.04 容器、macOS DMG 冒烟以及封装熔丝后的 Windows 检查都会运行它。
-- **端到端（开发时已验证）：**在 DSH 0.2.0-rc.1 上，插件写入了该路由；运行中新增的文件几秒内出现；DSH headless 的一轮对话经该路由在 llama-server 上完成。
+- **端到端（开发时已验证）：**在 DSH 0.2.0-rc.1 上，插件写入了该路由；运行中新增的文件几秒内出现；DSH headless 的一轮对话经该路由在 llama-server 上完成。首次启动的选择由无头浏览器在已放置的 Profile 与真实的 Linux `llama-server` 上验证：选择本地模型后服务启动；向空文件夹放入模型后设置步骤结束，该模型成为默认模型；“模型”页的开关停止服务并恢复先前的默认模型；重启后选择、默认模型和已确认的提示都得到保留。停止 Host 时服务随之停止。
 
 ## Limits
 

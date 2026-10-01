@@ -31,19 +31,22 @@ The installers bundle FFmpeg and FFprobe. Describe what you need in the conversa
 
 The installers bundle the llama.cpp model server, so you can run open models offline and without an API key:
 
-1. Download a model in GGUF format (`*.gguf`), for example a quantized Qwen, Llama, or Gemma model.
-2. Put it in the models folder, which is created at first launch and contains a short note:
+1. At first launch, choose "本地模型 (llama.cpp)" (local models) in the model choice and click "启动本地模型" (start local models). Later, turn the server on or off on the local models card at the bottom of Settings > Models.
+2. Download a model in GGUF format (`*.gguf`), for example a quantized Qwen, Llama, or Gemma model.
+3. Put it in the models folder. It is created at first launch and contains a short note; once local models are started, the dialog and the local models card show its path:
    - Windows: `%APPDATA%\WorkDSH\models`
    - macOS: `~/Library/Application Support/WorkDSH/models`
    - Ubuntu: `~/.config/WorkDSH/models`
-3. Within seconds, choose "本地模型 (llama.cpp)" in the model list and pick the model named after the file.
+4. Within seconds, the model appears under "本地模型 (llama.cpp)" in the model list, named after the file. If you chose local models at first launch, the first model becomes the default for new sessions.
+
+- If you did not choose at first launch, the server still starts by itself once the models folder holds a GGUF model. After you turn it off in Settings > Models, it no longer starts by itself. Turning it off also restores the previous default model when the default was a local one.
 
 - Each file is one model. Put a multimodal model (with its `mmproj` file) or a multi-part model in its own subfolder; the model is named after the folder.
 - On Windows, name model files and subfolders with English letters, digits, `-`, `_` and `.` only: the bundled llama.cpp cannot open file names with Chinese or other non-ASCII characters there. This does not apply to the path of the models folder itself.
 - A model loads on first use, one at a time, and unloads after ten idle minutes to free memory. It needs somewhat more memory than the file's size.
 - Each model gets a 32K context by default, capped at its trained length. To change the context, GPU layers, or other settings, create `presets.ini` in the models folder in llama.cpp's router preset format; the default no longer applies once that file exists.
 - The Windows build uses the GPU when a Vulkan driver is installed, and Apple silicon Macs use Metal; Intel Macs and the Ubuntu builds use the CPU.
-- The server listens only on the loopback address, with a key generated at each launch. Its log is `llama/server.log`, next to the models folder.
+- The server listens only on the loopback address, with a key generated at each launch. Its log is `llama/server.log`, next to the models folder; when the server fails to start, the local models card shows the log's last line.
 - Tool use depends on the model; smaller models may not complete multi-step tasks reliably.
 
 ## Data and plugins

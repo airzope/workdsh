@@ -1,5 +1,5 @@
 # Bilingual-pair consistency record: the git blob hash of each side as of the last
 # confirmed-consistent state. Both languages carry equal authority. Update both files
 # and re-record their hashes with git hash-object after editing either side.
-2026-09-29-build-time-white-label.md: 26a5ce0232730709adb14db42d894ad2f26715db
-2026-09-29-build-time-white-label.zh.md: 6d85df1abdcea113998973770359152a76c3e0aa
+2026-09-29-build-time-white-label.md: e155cfb286a4cfd48b0b2ac5fea28de82d072ebf
+2026-09-29-build-time-white-label.zh.md: a67dcced7812910e299fda4235f61e674b5c5c11

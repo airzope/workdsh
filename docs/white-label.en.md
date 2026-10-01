@@ -12,7 +12,7 @@ The default brand is `dsh-plugin-desktop/branding/workdsh/`. Copy that directory
 dsh-plugin-desktop/branding/acme/
 ├── brand.json
 ├── logo.png     # square PNG, at least 512 pixels, 1024 recommended
-└── mark.svg     # optional simplified mark for small icons, the tray and the sidebar
+└── mark.svg     # optional simplified mark for small icons, the tray, the sidebar and the chat start page
 ```
 
 Example `brand.json`:
@@ -47,7 +47,7 @@ Example `brand.json`:
 | `mark` | Simplified mark | SVG with colors in `fill`/`stroke` attributes, no `<style>` or `style` |
 | `color` | Color of the single-color tray icons | `#RRGGBB`; without it the mark keeps its colors |
 
-Without a `mark`, small icons and the sidebar use the `logo`, and the tray template icon uses the logo's silhouette.
+Without a `mark`, small icons, the sidebar and the chat start page use the `logo`, and the tray template icon uses the logo's silhouette.
 
 ## Build
 
@@ -66,7 +66,7 @@ You can also run the CI workflow manually in GitHub Actions and enter a committe
 ## What the brand covers
 
 - Installers and applications: file names of the Windows installer, portable archive, and Windows 7 offline installer; `AcmeDesk.exe`; the install directory; desktop and Start menu shortcuts; the uninstall entry's name and icon; `AcmeDesk.app` with its Dock icon and display name on macOS; `/opt/AcmeDesk`, the `acmedesk` command, the Debian package name, and the desktop entry on Linux.
-- At run time: window title and icon, user-data directory, sidebar brand name and mark, page title, the product name in the browser prompt, and the creator of exported XLSX and PDF files.
+- At run time: window title and icon, user-data directory, sidebar brand name and mark, the mark on the chat start page, page title, the product name in the browser prompt, and the creator of exported XLSX and PDF files.
 - Web deployments: the Host reads `WORKDSH_BRAND_NAME` and `WORKDSH_BRAND_MARK` (path to an SVG or PNG mark, at most 256 KiB) and serves them to the interface at `/api/workdsh-brand`. The Desktop carrier sets both variables.
 
 ## Limitations
