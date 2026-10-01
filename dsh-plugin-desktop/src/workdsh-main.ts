@@ -18,6 +18,7 @@ import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brandEnvironment, readPackagedBrand } from './brand.ts'
 import { ensureModelsDirectory, llamaExecutable, localModelsEnvironment } from './llama.ts'
+import { syncProfileManifest } from './profile-manifest.ts'
 import { syncProfilePatch } from './profile-patch.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
@@ -150,11 +151,13 @@ function materializeRuntimeProfile(home: string): string {
   const bundle = JSON.parse(readFileSync(join(sourceModules, 'workdsh-bundle', 'package.json'), 'utf8')) as { version: string }
   const runtimeVersion = `${bundle.version}+dsh-${dsh.version}`
   mkdirSync(target, { recursive: true })
-  for (const name of ['package.json', 'cordis.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+  for (const name of ['cordis.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
     const from = join(source, name)
     if (existsSync(from)) cpSync(from, join(target, name), { force: true })
   }
-  // DSH keeps the user's Settings in this file; replace only the composition.
+  // DSH keeps the user's Settings and bundle choices (Voice Input, say) in
+  // these files; replace only what the bundled Profile owns.
+  syncProfileManifest(join(source, 'package.json'), target)
   syncProfilePatch(join(source, 'cordis.patch.yml'), target)
   const installedVersion = existsSync(marker) ? readFileSync(marker, 'utf8').trim() : undefined
   if (existsSync(targetModules) && installedVersion !== runtimeVersion) {
