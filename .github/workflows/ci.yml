@@ -178,6 +178,8 @@ jobs:
         with:
           name: workdsh-speech-cache
           path: dsh-plugin-desktop/build/.workdsh-speech-cache
+          # The cache folder's name starts with a dot.
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
