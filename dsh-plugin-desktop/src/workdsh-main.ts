@@ -27,6 +27,7 @@ import {
   stopLlamaServer,
   waitForLlamaServer,
 } from './llama.ts'
+import { syncProfilePatch } from './profile-patch.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
@@ -173,10 +174,12 @@ function materializeRuntimeProfile(home: string): string {
   const bundle = JSON.parse(readFileSync(join(sourceModules, 'workdsh-bundle', 'package.json'), 'utf8')) as { version: string }
   const runtimeVersion = `${bundle.version}+dsh-${dsh.version}`
   mkdirSync(target, { recursive: true })
-  for (const name of ['package.json', 'cordis.yml', 'cordis.patch.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+  for (const name of ['package.json', 'cordis.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
     const from = join(source, name)
     if (existsSync(from)) cpSync(from, join(target, name), { force: true })
   }
+  // DSH keeps the user's Settings in this file; replace only the composition.
+  syncProfilePatch(join(source, 'cordis.patch.yml'), target)
   const installedVersion = existsSync(marker) ? readFileSync(marker, 'utf8').trim() : undefined
   if (existsSync(targetModules) && installedVersion !== runtimeVersion) {
     const stat = lstatSync(targetModules)
