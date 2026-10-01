@@ -35,3 +35,12 @@
       name: '@deepseek-ai/dsh-experimental-auto-review'
 - id: ui-sidebar-browser
   disabled: false
+# Desktop carries SenseVoiceSmall INT4 weights and the Silero VAD and names
+# them in WORKDSH_SENSEVOICE_*; Voice Input then needs no model download.
+# Elsewhere the provider downloads its pinned weights as before. The row
+# restates the voice bundle's dataRoot because a patch replaces the config.
+- id: speech-to-text-sensevoice
+  config:
+    dataRoot: !!js dshHomePath('speech-to-text', 'sensevoice')
+    modelDirectory: !!js "process.env.WORKDSH_SENSEVOICE_MODEL_DIR || undefined"
+    vadModelPath: !!js "process.env.WORKDSH_SENSEVOICE_VAD || undefined"
