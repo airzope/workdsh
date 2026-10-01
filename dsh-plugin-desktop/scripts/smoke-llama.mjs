@@ -36,7 +36,7 @@ mkdirSync(models)
 writeTinyGguf(join(models, 'workdsh-smoke.gguf'))
 
 let log = ''
-// As src/llama.ts does: llama.cpp checks the folder path through the ANSI
+// As the Profile's workdsh-bundle/local-models does: llama.cpp checks the folder path through the ANSI
 // code page on Windows, so the server runs in the folder and serves '.'.
 const child = spawn(server, ['--host', '127.0.0.1', '--port', String(port), '--models-dir', '.', '--models-max', '1', '--no-webui', '--offline'], {
   cwd: models,
