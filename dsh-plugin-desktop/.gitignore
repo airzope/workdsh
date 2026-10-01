@@ -11,3 +11,5 @@ build/.win7
 build/brand
 build/.workdsh-media-cache
 build/.workdsh-llama-cache
+build/.workdsh-speech-cache
+build/.workdsh-speech-work

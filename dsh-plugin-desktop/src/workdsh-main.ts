@@ -17,16 +17,10 @@ import { release } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brandEnvironment, readPackagedBrand } from './brand.ts'
-import {
-  ensureModelsDirectory,
-  freeLoopbackPort,
-  llamaExecutable,
-  llamaRuntimeEnvironment,
-  planLlamaServer,
-  startLlamaServer,
-  stopLlamaServer,
-  waitForLlamaServer,
-} from './llama.ts'
+import { ensureModelsDirectory, llamaExecutable, localModelsEnvironment } from './llama.ts'
+import { syncProfileManifest } from './profile-manifest.ts'
+import { syncProfilePatch } from './profile-patch.ts'
+import { speechEnvironment } from './speech.ts'
 import { syncBundledCompatibility } from './runtime-compatibility.ts'
 import { applyWindows7Compatibility } from './windows7-compatibility.ts'
 
@@ -36,7 +30,6 @@ const brand = readPackagedBrand(BRAND_DIRECTORY)
 const READY_PATTERN = /dsh web:\s+(http:\/\/127\.0\.0\.1:\d+\/?\?token=[^\s]+)/u
 
 let runtime: ChildProcess | undefined
-let llama: ChildProcess | undefined
 let window: BrowserWindow | undefined
 let quitting = false
 
@@ -82,6 +75,12 @@ function bundledLlama(): string {
   return join(process.resourcesPath, 'workdsh-runtime', 'llama')
 }
 
+function bundledSpeech(): string {
+  const overridden = process.env.WORKDSH_SPEECH
+  if (overridden !== undefined && overridden.length > 0) return overridden
+  return join(process.resourcesPath, 'workdsh-runtime', 'speech', 'sensevoice')
+}
+
 function modelsDirectory(): string {
   const overridden = process.env.WORKDSH_MODELS_DIR
   if (overridden !== undefined && overridden.length > 0) return overridden
@@ -89,31 +88,17 @@ function modelsDirectory(): string {
 }
 
 /**
- * Start the local model server for the models folder.
- * @returns Variables for the runtime, or none when the server is unavailable.
+ * What the WorkDSH Profile needs to run the bundled llama.cpp server for the
+ * models folder; it starts the server when the user chooses local models.
+ * @returns Variables for the runtime, or none when this build has no server.
  */
-async function startLocalModels(): Promise<Record<string, string>> {
-  const state = join(app.getPath('userData'), 'llama')
-  const logFile = join(state, 'server.log')
+function localModels(): Record<string, string> {
   try {
     const executable = llamaExecutable(bundledLlama())
     if (executable === undefined) return {}
     const models = modelsDirectory()
     ensureModelsDirectory(models, brand.name)
-    const plan = planLlamaServer({ executable, modelsDirectory: models, stateDirectory: state, port: await freeLoopbackPort(), env: process.env })
-    const child = startLlamaServer(plan, logFile)
-    llama = child
-    child.once('error', cause => process.stderr.write(`WorkDSH local model server failed: ${String(cause)}\n`))
-    child.once('exit', code => {
-      if (llama === child) llama = undefined
-      if (!quitting) process.stderr.write(`WorkDSH local model server exited (${String(code)}); see ${logFile}\n`)
-    })
-    if (!(await waitForLlamaServer(plan.baseURL, child))) {
-      stopLlamaServer(child)
-      process.stderr.write(`WorkDSH local models are unavailable: llama-server did not start; see ${logFile}\n`)
-      return {}
-    }
-    return llamaRuntimeEnvironment(plan, models)
+    return localModelsEnvironment({ executable, modelsDirectory: models, stateDirectory: join(app.getPath('userData'), 'llama') })
   } catch (cause) {
     process.stderr.write(`WorkDSH local models are unavailable: ${String(cause)}\n`)
     return {}
@@ -173,10 +158,14 @@ function materializeRuntimeProfile(home: string): string {
   const bundle = JSON.parse(readFileSync(join(sourceModules, 'workdsh-bundle', 'package.json'), 'utf8')) as { version: string }
   const runtimeVersion = `${bundle.version}+dsh-${dsh.version}`
   mkdirSync(target, { recursive: true })
-  for (const name of ['package.json', 'cordis.yml', 'cordis.patch.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+  for (const name of ['cordis.yml', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
     const from = join(source, name)
     if (existsSync(from)) cpSync(from, join(target, name), { force: true })
   }
+  // DSH keeps the user's Settings and bundle choices (Voice Input, say) in
+  // these files; replace only what the bundled Profile owns.
+  syncProfileManifest(join(source, 'package.json'), target)
+  syncProfilePatch(join(source, 'cordis.patch.yml'), target)
   const installedVersion = existsSync(marker) ? readFileSync(marker, 'utf8').trim() : undefined
   if (existsSync(targetModules) && installedVersion !== runtimeVersion) {
     const stat = lstatSync(targetModules)
@@ -240,6 +229,7 @@ function startRuntime(home: string, profileDir: string, localModels: Record<stri
       DSH_ELECTRON_EXECUTABLE: process.execPath,
       ...brandEnvironment(brand, BRAND_DIRECTORY),
       WORKDSH_MEDIA_TOOLS: bundledMediaTools(),
+      ...speechEnvironment(bundledSpeech()),
       ...localModels,
       ELECTRON_RUN_AS_NODE: undefined,
     },
@@ -275,8 +265,6 @@ function stopRuntime(): void {
   quitting = true
   if (runtime !== undefined && runtime.exitCode === null) runtime.kill('SIGTERM')
   runtime = undefined
-  if (llama !== undefined) stopLlamaServer(llama)
-  llama = undefined
 }
 
 // Browser workers are the same executable, so they take the same policy.
@@ -314,7 +302,7 @@ if (!app.requestSingleInstanceLock()) {
   void app.whenReady().then(async () => {
     const home = runtimeHome()
     const profile = materializeRuntimeProfile(home)
-    startRuntime(home, profile, await startLocalModels())
+    startRuntime(home, profile, localModels())
   }).catch(cause => {
     process.stderr.write(`WorkDSH failed to start: ${cause instanceof Error ? cause.stack ?? cause.message : String(cause)}\n`)
     app.quit()

@@ -4,7 +4,7 @@
 <p align="center">WorkDSH brings material, experts, skills, and connectors into one workspace, with the SkillHub catalog and installable DSH community plugins.</p>
 <p align="center"><a href="#download-desktop">Download Desktop</a> · <a href="#from-material-to-deliverable">Explore the workflow</a> · <a href="docs/user-guide.en.md">User guide</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
-[![Desktop release](https://img.shields.io/badge/Desktop-2.0.6--alpha.3-176BFF)](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3) [![GitHub stars](https://img.shields.io/github/stars/techflag/workdsh?label=stars)](https://github.com/techflag/workdsh) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Desktop release](https://img.shields.io/badge/Desktop-2.0.6--alpha.4-176BFF)](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4) [![GitHub stars](https://img.shields.io/github/stars/techflag/workdsh?label=stars)](https://github.com/techflag/workdsh) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ![WorkDSH projects home with project templates and the complete desktop sidebar](workdsh-web/assets/screenshots/workdsh-projects-alpha8-dark.png)
 
@@ -58,18 +58,18 @@ WorkDSH connects two independently maintained catalogs: [SkillHub](https://skill
 
 ## Download Desktop
 
-The current desktop installer release is **2.0.6-alpha.3** ([GitHub Release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3)):
+The current desktop installer release is **2.0.6-alpha.4** ([GitHub Release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4)):
 
 | Platform | Download |
 | --- | --- |
-| Windows x64 | [WorkDSH Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.3-x64-Setup.exe) |
-| Windows 7 SP1 x64 (offline) | [WorkDSH win7 Offline-Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.3-win7-x64-Offline-Setup.exe) |
-| Ubuntu 20.04+ x64 (amd64) | [WorkDSH amd64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.3-linux-amd64.deb) |
-| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.3-linux-arm64.deb) |
-| macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.3-arm64.dmg) |
-| macOS Intel | [WorkDSH x64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.3-x64.dmg) |
+| Windows x64 | [WorkDSH Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.4-x64-Setup.exe) |
+| Windows 7 SP1 x64 (offline) | [WorkDSH win7 Offline-Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.4-win7-x64-Offline-Setup.exe) |
+| Ubuntu 20.04+ x64 (amd64) | [WorkDSH amd64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.4-linux-amd64.deb) |
+| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.4-linux-arm64.deb) |
+| macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.4-arm64.dmg) |
+| macOS Intel | [WorkDSH x64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.4-x64.dmg) |
 
-Desktop installers include Node.js and Python runtimes by default, so users do not need to install them separately. They also bundle the llama.cpp local model server: put GGUF model files in the models folder to use open models offline, without an API key ([details](docs/user-guide.en.md#local-models)). Windows 7 SP1 x64 is supported on a best-effort basis: its offline installer also installs [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) and the Microsoft VC++ runtime when they are missing ([details](docs/faq.en.md#does-it-run-on-windows-7)). On Ubuntu, install with `sudo apt install ./WorkDSH-<version>-linux-<arch>.deb` ([details](docs/faq.en.md#how-do-i-install-it-on-ubuntu)). This is an **Alpha release**: end-to-end project document references, expert execution, and different Office formats are still being validated. The macOS DMGs support macOS 15 and later and are unsigned ([first launch](docs/faq.en.md#how-do-i-install-it-on-macos)); download updates from [Releases](https://github.com/techflag/workdsh/releases). Start with the [user guide](docs/user-guide.en.md) and [FAQ](docs/faq.en.md).
+Desktop installers include Node.js and Python runtimes by default, so users do not need to install them separately. They also bundle the llama.cpp local model server: choose local models at first launch and put GGUF model files in the models folder to use open models offline, without an API key ([details](docs/user-guide.en.md#local-models)). Voice input recognizes speech offline with a bundled SenseVoiceSmall INT4 model; turn it on under Plugins ([details](docs/user-guide.en.md#voice-input)). Windows 7 SP1 x64 is supported on a best-effort basis: its offline installer also installs [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) and the Microsoft VC++ runtime when they are missing ([details](docs/faq.en.md#does-it-run-on-windows-7)). On Ubuntu, install with `sudo apt install ./WorkDSH-<version>-linux-<arch>.deb` ([details](docs/faq.en.md#how-do-i-install-it-on-ubuntu)). This is an **Alpha release**: end-to-end project document references, expert execution, and different Office formats are still being validated. The macOS DMGs support macOS 15 and later and are unsigned ([first launch](docs/faq.en.md#how-do-i-install-it-on-macos)); download updates from [Releases](https://github.com/techflag/workdsh/releases). Start with the [user guide](docs/user-guide.en.md) and [FAQ](docs/faq.en.md).
 
 ## Development and documentation
 

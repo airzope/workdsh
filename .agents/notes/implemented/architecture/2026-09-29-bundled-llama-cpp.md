@@ -6,19 +6,26 @@ English | [中文](2026-09-29-bundled-llama-cpp.zh.md)
 
 ## Decision
 
-Every Desktop installer carries the `llama-server` of llama.cpp `b11247` in `workdsh-runtime/llama`. The carrier runs it in router mode over a models folder in user data. Every GGUF file in that folder becomes a model of the `llama-local` route, which the model list shows as "本地模型 (llama.cpp)". No network access or API key is needed.
+Every Desktop installer carries the `llama-server` of llama.cpp `b11247` in `workdsh-runtime/llama`. It runs in router mode over a models folder in user data. Every GGUF file in that folder becomes a model of the `llama-local` route, which the model list shows as "本地模型 (llama.cpp)". No network access or API key is needed.
 
 Two parts share the work, so no second model client is written:
 
-- **The carrier** (`src/llama.ts`) owns the process and its security:
+- **The carrier** (`src/llama.ts`) prepares and hands over:
+  - It finds the staged server through `llama/manifest.json`.
   - It creates `<userData>/models` with a bilingual `README.txt`.
-  - It listens on `127.0.0.1` at a free port, with an API key generated per launch.
-  - It waits for `/health`, then starts DSH with `WORKDSH_LLAMA_BASE_URL`, `WORKDSH_LLAMA_API_KEY`, `WORKDSH_LLAMA_MODELS_DIR` and `WORKDSH_LLAMA_CONTEXT_SIZE`.
-  - On quit it stops the router's process group, so the model processes stop too.
-  - If the server does not start, the app runs without local models, and `<userData>/llama/server.log` says why.
-- **The WorkDSH Profile** (`workdsh-bundle/local-models`, enabled only when `WORKDSH_LLAMA_BASE_URL` is set) owns the route. It reads the router's `GET /v1/models?reload=1` and writes `providers.llama-local` in the `llm-pi-ai` settings section through DSH's `settings` service. DSH's own pi-ai adapter then speaks the OpenAI-compatible protocol. The route names the key's environment variable, never the key.
+  - It starts DSH with `WORKDSH_LLAMA_SERVER`, `WORKDSH_LLAMA_MODELS_DIR`, `WORKDSH_LLAMA_STATE_DIR` (`<userData>/llama`), `WORKDSH_LLAMA_CONTEXT_SIZE` and `WORKDSH_LLAMA_API_KEY`, a key generated per launch. The key must be there at start: DSH reads credentials from a snapshot of its launch environment.
+- **The WorkDSH Profile** (`workdsh-bundle/local-models`, enabled when `WORKDSH_LLAMA_SERVER` or `WORKDSH_LLAMA_BASE_URL` is set) owns the process and the route:
+  - It starts the server through DSH's `subprocess` service, on `127.0.0.1` at a free port, with the key in `LLAMA_API_KEY`. That service ties the process to the Host: a Windows Job closed with the Host, a Linux user-systemd scope, and termination on graceful shutdown. Its output goes to `<state>/server.log`.
+  - It runs the server when the user chooses local models, and until the user chooses, while the models folder holds a GGUF model. The choice is kept in `<state>/local-models.json`; a server that fails waits for the user to ask again.
+  - It reads `GET /v1/models?reload=1` and writes `providers.llama-local` in the `llm-pi-ai` settings section through DSH's `settings` service. DSH's own pi-ai adapter then speaks the OpenAI-compatible protocol. The route names the key's environment variable, never the key. The route exists only while the server runs.
+  - `/api/workdsh-local-models` reports the server, its models and folder, and takes `{ enabled, useAsDefault }`. With `useAsDefault`, the first served model becomes the agent default once one exists, and the default it replaced is kept; turning local models off restores that default.
+  - A Web deployment can name its own router with `WORKDSH_LLAMA_BASE_URL`. The plugin then only syncs the route, and the server cannot be started or stopped from the UI.
 
-The plugin rescans when the folder changes, and every 30 s as a fallback. It removes the route when the folder is empty, and it rewrites settings only when a field it owns changes. The carrier rewrites the Profile's `cordis.patch.yml` at every launch, and the plugin restores the route within seconds.
+The plugin rescans when the folder changes, and every 30 s as a fallback. It removes the route when the folder is empty, and it rewrites settings only when a field it owns changes. Since Desktop 2.0.6-alpha.4 the carrier keeps Settings changes in the Profile's `cordis.patch.yml` across launches (see [the runtime Profile patch note](2026-10-01-runtime-profile-patch-settings.md)), so the route and the default model persist.
+
+## First-run choice
+
+DSH's credential step offers the `settings.models.sign-in` seat before its API key editor. WorkDSH fills it with a choice between "本地模型 (llama.cpp)" and "DeepSeek API Key". Choosing local models starts the server and asks for a local default. While the folder is empty, the dialog shows the folder and how to add models; once a model is served, DSH sees a usable provider and closes the step itself. Without a local server in the deployment, the seat hands over to the API key editor at once. The Models settings page has a card for the server: state, models, folder, an on/off switch and "use as default".
 
 ## Server settings
 
@@ -48,7 +55,7 @@ The Windows installer does not install the VC++ runtime, so `msvcp140.dll`, `vcr
 - **Offline files:** the Linux, macOS and Windows 7 audits require the server, its manifest and license. The Windows 7 audit also requires the runtime DLLs. It accepts `vulkan-1.dll` only as an import of `llama/bin/ggml-vulkan.dll`, which ggml loads at run time and skips without a driver.
 - **Existing checks:** the glibc, `minos` and Windows 7 import checks cover every llama image.
 - **Smoke:** `scripts/smoke-llama.mjs` generates a 34 KB random-weight GGUF (`scripts/tiny-gguf.mjs`) and serves a folder whose path has Chinese and a space. It checks the key, a model added after start, and a chat completion. The Ubuntu 20.04 and 24.04 containers, the macOS DMG smoke and the post-fuse Windows check run it.
-- **End to end (verified during development):** with DSH 0.2.0-rc.1, the plugin wrote the route; files added while running appeared within seconds; and a DSH headless turn ran through the route to llama-server.
+- **End to end (verified during development):** with DSH 0.2.0-rc.1, the plugin wrote the route; files added while running appeared within seconds; and a DSH headless turn ran through the route to llama-server. For the first-run choice, a headless browser drove the staged Profile with the real Linux `llama-server`: choosing local models started it, a model dropped into an empty folder ended setup with that model as the default, the switch on the Models page stopped the server and restored the previous default, and after a restart the choice, the default and the acknowledged notice were kept. Stopping the Host stopped the server.
 
 ## Limits
 

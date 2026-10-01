@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-本包构建 Electron 应用。安装包包含 `lib/workdsh-main.js` 和一套运行时 Profile。DeepSeek Harness 的 Host、Web Client 及核心能力来自该 Profile 中固定的上游版本。WorkDSH 的项目、资料库、专家、技能、连接器及其支撑服务由 `workdsh-bundle` 组合，不是另外几个 Desktop 版本。
+本包构建 Electron 应用。安装包包含 `lib/workdsh-main.js` 和一套运行时 Profile。DeepSeek Harness 的 Host、Web Client 及核心能力来自该 Profile 中固定的上游版本。WorkDSH 的项目、资料库、专家、技能、连接器及其支撑服务由 `workdsh-bundle` 组合，不是另外几个 Desktop 版本。载体每次启动时把该 Profile 链接到 `<userData>/dsh-home`；只有内置组合变化时才替换 Profile 的 `cordis.patch.yml`，并保留 DSH 设置追加的行，因此设置在多次启动和更新之间得以保留（[Agent Note](../.agents/notes/implemented/architecture/2026-10-01-runtime-profile-patch-settings.zh.md)）。
 
 ## 开发
 
@@ -26,7 +26,9 @@ Ubuntu 包在各自架构上用 `corepack yarn dist:linux` 原生构建，生成
 
 名称、标识与图标来自构建时的品牌目录，默认为 `branding/workdsh/`。`scripts/generate-brand.ts` 把 `WORKDSH_BRAND` 选择的品牌生成到 `build/brand/`（各平台图标、托盘位图、标志与品牌字段）；打包脚本据此追加对应的 electron-builder 覆盖项，并按品牌文件名校验产物，载体再把显示名称和标志传给 Profile。参见[白牌构建](../docs/white-label.md)和 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-build-time-white-label.zh.md)。
 
-`scripts/prepare-workdsh-llama.ts` 把 llama.cpp `b11247` 的 `llama-server` 放到 `build/workdsh-runtime/llama/`：Windows（Vulkan 构建，旁附 VC++ 运行库 DLL）与 macOS 使用官方归档；Ubuntu 使用 `scripts/build-llama-linux.sh` 在 `ubuntu:20.04` 中从同一提交构建的版本，因此构建 Linux 包需要 Docker。`src/llama.ts` 以路由模式在回环端口上运行它，服务 `<userData>/models`，每次启动使用新的密钥；Profile 中的 `workdsh-bundle/local-models` 把该文件夹中的每个 GGUF 文件变成一个本地模型；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-bundled-llama-cpp.zh.md)。
+`scripts/prepare-workdsh-llama.ts` 把 llama.cpp `b11247` 的 `llama-server` 放到 `build/workdsh-runtime/llama/`：Windows（Vulkan 构建，旁附 VC++ 运行库 DLL）与 macOS 使用官方归档；Ubuntu 使用 `scripts/build-llama-linux.sh` 在 `ubuntu:20.04` 中从同一提交构建的版本，因此构建 Linux 包需要 Docker。`src/llama.ts` 创建 `<userData>/models`，并把服务路径、该文件夹和每次启动新生成的密钥交给运行时。Profile 中的 `workdsh-bundle/local-models` 在用户于首次启动或“设置 → 模型”中选择本地模型时，或在文件夹中出现模型后，以路由模式在回环端口上启动服务，并把该文件夹中的每个 GGUF 文件变成一个本地模型；参见 [Agent Note](../.agents/notes/implemented/architecture/2026-09-29-bundled-llama-cpp.zh.md)。
+
+`scripts/prepare-workdsh-speech.ts` 把 SenseVoiceSmall INT4 权重、词表和 Silero VAD 放到 `build/workdsh-runtime/speech/sensevoice/`，载体再把它们告诉 Profile，因此 DSH 的本地语音转文字无需下载。它在由 `scripts/sensevoice/requirements.txt` 中按哈希固定的 wheel 组成的虚拟环境里（Linux x64 上的 Python 3.11 或 3.12），用 `scripts/sensevoice/quantize.py` 量化所固定 DSH 版本所固定的 FP32 导出，并且只接受固定的结果；结果保存在 `build/.workdsh-speech-cache`，CI 在每次运行的 `speech-model` 作业中生成一次。参见 [Agent Note](../.agents/notes/implemented/architecture/2026-10-01-bundled-sensevoice-int4.zh.md)。
 
 发布只来自默认分支：手动运行的 `Release` 工作流在分支最新提交上创建 `v<Web 版本>` 并运行 Web 发布，随后创建 `desktop-v<Desktop 版本>` 并运行 CI 的标签构建，由它发布安装包、`SHA256SUMS` 与 FFmpeg 源码归档。
 

@@ -1,25 +1,40 @@
 import type { Context } from '@deepseek-ai/cordis';
+import type {} from '@deepseek-ai/dsh-agent-default-model';
+import type { HostConnectionHandle } from '@deepseek-ai/dsh-client-connection';
 import type {} from '@deepseek-ai/dsh-settings';
-import { watch, type FSWatcher } from 'node:fs';
+import type { SubprocessHandle } from '@deepseek-ai/dsh-subprocess';
+import { createWriteStream, watch, type FSWatcher } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { isAbsolute, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
+import {
+  freeLoopbackPort, hasGgufModels, planLlamaServer, readPreference, waitForHealth, writePreference,
+  type LocalModelsPreference,
+} from './llama-server.js';
+import { statusPath, type LocalModelsRequest, type LocalModelsStatus, type ServerState } from './local-models-contract.js';
 
 /**
  * Keep one `llm-pi-ai` provider route in step with a llama.cpp router server:
  * every GGUF model it serves from its models folder becomes a selectable
- * model. The Desktop carrier starts that server and passes its address; a
- * Web deployment can point the same variables at its own router.
+ * model. Desktop passes the bundled `llama-server`, which this plugin starts
+ * when the user chooses local models, or by itself once the models folder
+ * holds one. A Web deployment can instead point `baseURL` at its own router.
  */
 export const name = 'workdsh-local-models';
-export const inject = ['settings'];
+export const inject = ['settings', 'connection', 'subprocess'];
+
+export { statusPath, type LocalModelsRequest, type LocalModelsStatus, type ServerState } from './local-models-contract.js';
 
 export interface Config {
-  /** OpenAI-compatible base URL of the router, ending in `/v1`. */
+  /** OpenAI-compatible base URL of a router someone else runs, ending in `/v1`. */
   baseURL?: string;
-  /** Environment variable holding the router's API key. */
+  /** A `llama-server` executable to run when no `baseURL` is given. */
+  server?: string;
+  /** Environment variable holding the router's API key, set when the Host starts. */
   apiKeyEnv?: string;
   /** Folder the router serves; watched so new files appear promptly. */
   modelsDir?: string;
+  /** Where a started server keeps its presets, cache, log and the user's choice. */
+  stateDir?: string;
   /** Context size the router gives each model unless a preset sets one. */
   contextSize?: number;
   /** Profile entry of the pi-ai adapter whose settings hold the route. */
@@ -239,9 +254,21 @@ export function containsRoute(actual: unknown, expected: unknown): boolean {
   return actual === expected;
 }
 
+/**
+ * The last meaningful line of a server log, for the status.
+ * @param log - Recent output.
+ */
+export function lastLogLine(log: string): string | undefined {
+  const line = log.split(/\r?\n/u).map(item => item.trim()).filter(Boolean).at(-1);
+  return line === undefined ? undefined : line.slice(0, 300);
+}
+
 export function apply(ctx: Context, config: Config = {}): void {
-  const baseURL = config.baseURL?.trim().replace(/\/+$/u, '');
-  if (!baseURL) {
+  const external = config.baseURL?.trim().replace(/\/+$/u, '') || undefined;
+  const managed = external === undefined && config.server && config.modelsDir && config.stateDir
+    ? { server: config.server, modelsDir: config.modelsDir, stateDir: config.stateDir }
+    : undefined;
+  if (external === undefined && managed === undefined) {
     ctx.logger.info('workdsh-local-models: no local model server configured');
     return;
   }
@@ -250,77 +277,275 @@ export function apply(ctx: Context, config: Config = {}): void {
   const route = config.route ?? 'llama-local';
   const displayName = config.displayName ?? '本地模型 (llama.cpp)';
   const contextSize = config.contextSize !== undefined && config.contextSize > 0 ? config.contextSize : DEFAULT_CONTEXT_SIZE;
+  const modelsDir = managed?.modelsDir ?? config.modelsDir;
   const trainedLengths = new Map<string, number | undefined>();
+  let preference: LocalModelsPreference = managed ? readPreference(managed.stateDir) : {};
+  let state: ServerState = external === undefined ? 'stopped' : 'running';
+  let baseURL = external;
+  let error: string | undefined;
+  let served: string[] = [];
+  let server: SubprocessHandle | undefined;
   let stopped = false;
   let running: Promise<void> | undefined;
-  let again = false;
+  let queued: Promise<void> | undefined;
   let synced = false;
 
   const trainedLength = async (path: string | undefined): Promise<number | undefined> => {
     if (path === undefined) return undefined;
     if (!trainedLengths.has(path)) {
-      trainedLengths.set(path, await readGgufContextLength(path).catch((error: unknown) => {
-        ctx.logger.warn(`workdsh-local-models: cannot read ${path}: ${String(error)}`);
+      trainedLengths.set(path, await readGgufContextLength(path).catch((cause: unknown) => {
+        ctx.logger.warn(`workdsh-local-models: cannot read ${path}: ${String(cause)}`);
         return undefined;
       }));
     }
     return trainedLengths.get(path);
   };
 
+  const remember = (next: LocalModelsPreference): void => {
+    preference = next;
+    if (!managed) return;
+    try {
+      writePreference(managed.stateDir, next);
+    } catch (cause) {
+      ctx.logger.warn(`workdsh-local-models: cannot store the choice: ${String(cause)}`);
+    }
+  };
+
+  const defaults = () => ctx.get('agentDefaultModel');
+
+  // The user asked for a local default: take the first model once one is
+  // served, unless the default already is one of them.
+  const applyDefault = async (models: readonly LocalModelProfile[]): Promise<void> => {
+    const service = defaults();
+    if (!preference.useAsDefault || models.length === 0 || service === undefined) return;
+    const current = service.currentSelection();
+    let previousDefault = preference.previousDefault;
+    if (current.provider !== route || !models.some(model => model.id === current.model)) {
+      if (current.provider !== route) previousDefault = { ...current };
+      await service.saveSelection({ provider: route, model: models[0].id });
+      ctx.logger.info(`workdsh-local-models: new agents now start on ${models[0].id}`);
+    }
+    const { useAsDefault: _done, ...rest } = preference;
+    remember({ ...rest, ...(previousDefault === undefined ? {} : { previousDefault }) });
+  };
+
+  // Turning local models off puts back the default they replaced.
+  const restoreDefault = async (): Promise<void> => {
+    const service = defaults();
+    const previous = preference.previousDefault;
+    if (service === undefined || previous === undefined) return;
+    if (service.currentSelection().provider === route) {
+      // The stored selection is one this service returned, brand included.
+      await service.saveSelection(previous as Parameters<typeof service.saveSelection>[0]);
+      ctx.logger.info(`workdsh-local-models: new agents start on ${previous.provider}/${previous.model} again`);
+    }
+    const { previousDefault: _restored, ...rest } = preference;
+    remember(rest);
+  };
+
   const syncOnce = async (): Promise<void> => {
-    const key = process.env[apiKeyEnv];
-    const response = await fetch(`${baseURL}/models?reload=1`, {
-      headers: key ? { authorization: `Bearer ${key}` } : {},
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!response.ok) throw new Error(`${baseURL}/models returned ${String(response.status)}`);
-    const models = routerModels(await response.json(), config.modelsDir);
-    const profiles: LocalModelProfile[] = [];
-    for (const model of models) profiles.push(localModelProfile(model, await trainedLength(model.path), contextSize));
+    const target = state === 'running' ? baseURL : undefined;
+    // The route appears once the server answers.
+    if (state === 'starting') return;
+    let profiles: LocalModelProfile[] = [];
+    if (target !== undefined) {
+      const key = process.env[apiKeyEnv];
+      const response = await fetch(`${target}/models?reload=1`, {
+        headers: key ? { authorization: `Bearer ${key}` } : {},
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!response.ok) throw new Error(`${target}/models returned ${String(response.status)}`);
+      const models = routerModels(await response.json(), modelsDir);
+      for (const model of models) profiles.push(localModelProfile(model, await trainedLength(model.path), contextSize));
+    }
     if (stopped) return;
     const descriptor = ctx.settings.describe().find(item => item.ns === settingsEntry);
     if (descriptor === undefined) throw new Error(`settings entry ${settingsEntry} is not active yet`);
     const current = (descriptor.user as { providers?: Record<string, unknown> } | undefined)?.providers?.[route];
-    if (profiles.length === 0) {
+    served = profiles.map(model => model.id);
+    if (target === undefined || profiles.length === 0) {
       if (current !== undefined) {
         await ctx.settings.mutate(settingsEntry, [{ op: 'unset', path: ['providers', route] }], descriptor.revision);
-        ctx.logger.info('workdsh-local-models: no GGUF models; removed the local route');
+        ctx.logger.info(target === undefined ? 'workdsh-local-models: the server is not running; removed the local route' : 'workdsh-local-models: no GGUF models; removed the local route');
       }
       synced = true;
       return;
     }
-    const desired = localRoute(profiles, { baseURL, apiKeyEnv, displayName });
+    const desired = localRoute(profiles, { baseURL: target, apiKeyEnv, displayName });
     if (!containsRoute(current, desired) || !containsRoute(desired, current)) {
       await ctx.settings.mutate(settingsEntry, [{ op: 'set', path: ['providers', route], value: desired } as SettingsOp], descriptor.revision);
       ctx.logger.info(`workdsh-local-models: serving ${profiles.map(model => model.id).join(', ')}`);
     }
     synced = true;
+    await applyDefault(profiles);
   };
 
+  // A sync asked for while one runs waits for a fresh one, so the answer
+  // reflects every change made before the call.
   const sync = (): Promise<void> => {
     if (stopped) return Promise.resolve();
-    if (running !== undefined) { again = true; return running; }
+    if (running !== undefined) {
+      queued ??= running.then(() => { queued = undefined; return sync(); });
+      return queued;
+    }
     running = syncOnce()
-      .catch((error: unknown) => { if (!stopped) ctx.logger.warn(`workdsh-local-models: ${String(error instanceof Error ? error.message : error)}`); })
-      .finally(() => {
-        running = undefined;
-        if (again) { again = false; void sync(); }
-      });
+      .catch((cause: unknown) => { if (!stopped) ctx.logger.warn(`workdsh-local-models: ${String(cause instanceof Error ? cause.message : cause)}`); })
+      .finally(() => { running = undefined; });
     return running;
   };
+
+  const startServer = async (): Promise<void> => {
+    if (!managed || stopped || server !== undefined) return;
+    const apiKey = process.env[apiKeyEnv];
+    if (!apiKey) {
+      state = 'failed';
+      error = `${apiKeyEnv} is not set`;
+      return;
+    }
+    state = 'starting';
+    error = undefined;
+    let launch;
+    try {
+      launch = planLlamaServer({ ...managed, port: await freeLoopbackPort(), apiKey, contextSize });
+    } catch (cause) {
+      state = 'failed';
+      error = String(cause instanceof Error ? cause.message : cause);
+      return;
+    }
+    const log = createWriteStream(join(managed.stateDir, 'server.log'));
+    log.on('error', () => { /* the log is a convenience */ });
+    let recent = '';
+    let exited = false;
+    let started: SubprocessHandle;
+    try {
+      started = ctx.subprocess.spawn({
+        argv: launch.argv,
+        cwd: launch.cwd,
+        env: launch.env,
+        stdio: { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' },
+        graceMs: 5_000,
+      });
+    } catch (cause) {
+      log.end();
+      state = 'failed';
+      error = String(cause instanceof Error ? cause.message : cause);
+      return;
+    }
+    server = started;
+    for (const stream of [started.stdout, started.stderr]) {
+      stream?.on('data', (chunk: Buffer) => {
+        log.write(chunk);
+        recent = `${recent}${chunk.toString('utf8')}`.slice(-8_192);
+      });
+    }
+    void started.done
+      .then(outcome => `llama-server exited (${String(outcome.exitCode ?? outcome.signal)})`, (cause: unknown) => String(cause))
+      .then(reason => {
+        exited = true;
+        log.end();
+        // A stop clears `server` first; anything else is a failure.
+        if (server !== started || stopped) return;
+        server = undefined;
+        baseURL = undefined;
+        state = 'failed';
+        error = lastLogLine(recent) ?? reason;
+        ctx.logger.warn(`workdsh-local-models: ${reason}; see ${join(managed.stateDir, 'server.log')}`);
+        void sync();
+      });
+    if (!(await waitForHealth(launch.baseURL, () => !exited && server === started))) {
+      if (server !== started) return;
+      server = undefined;
+      started.terminate();
+      state = 'failed';
+      error = lastLogLine(recent) ?? 'llama-server did not start';
+      ctx.logger.warn(`workdsh-local-models: llama-server did not start; see ${join(managed.stateDir, 'server.log')}`);
+      return;
+    }
+    if (server !== started) return;
+    baseURL = launch.baseURL;
+    state = 'running';
+    ctx.logger.info(`workdsh-local-models: llama-server is serving ${managed.modelsDir}`);
+  };
+
+  const stopServer = async (): Promise<void> => {
+    const current = server;
+    server = undefined;
+    baseURL = undefined;
+    state = 'stopped';
+    error = undefined;
+    if (current === undefined) return;
+    current.terminate();
+    await current.waitForExit().catch(() => false);
+  };
+
+  // One start or stop at a time, in request order.
+  let transition: Promise<void> = Promise.resolve();
+  const reconcile = (): Promise<void> => {
+    transition = transition.then(async () => {
+      if (!managed || stopped) return;
+      const wanted = preference.enabled ?? hasGgufModels(managed.modelsDir);
+      // A failed server waits for the user to ask again.
+      if (wanted && server === undefined && state !== 'failed') await startServer();
+      else if (!wanted && (server !== undefined || state === 'failed')) await stopServer();
+    }).catch((cause: unknown) => { ctx.logger.warn(`workdsh-local-models: ${String(cause)}`); });
+    return transition.then(sync);
+  };
+
+  const status = (): LocalModelsStatus => ({
+    mode: managed ? 'managed' : 'external',
+    enabled: managed ? preference.enabled ?? null : true,
+    state,
+    route,
+    models: [...served],
+    ...(modelsDir ? { modelsDir } : {}),
+    isDefault: defaults()?.currentSelection().provider === route,
+    ...(error ? { error } : {}),
+  });
+
+  const respond = async (request: Request): Promise<Response> => {
+    if (request.method === 'GET' || request.method === 'HEAD') return Response.json(status(), { headers: { 'cache-control': 'no-store' } });
+    const body = await request.json().catch(() => undefined) as LocalModelsRequest | undefined;
+    if (body === undefined || body === null || typeof body !== 'object'
+      || (body.enabled !== undefined && typeof body.enabled !== 'boolean')
+      || (body.useAsDefault !== undefined && typeof body.useAsDefault !== 'boolean')) {
+      return Response.json({ error: 'Expected { enabled?: boolean, useAsDefault?: boolean }' }, { status: 400 });
+    }
+    if (body.enabled !== undefined && !managed) {
+      return Response.json({ error: 'This local model server is managed outside WorkDSH' }, { status: 409 });
+    }
+    let next = { ...preference };
+    if (body.enabled !== undefined) {
+      next.enabled = body.enabled;
+      // Asking again retries a server that failed.
+      if (body.enabled && state === 'failed') state = 'stopped';
+    }
+    if (body.useAsDefault === true && next.enabled !== false) next.useAsDefault = true;
+    if (body.useAsDefault === false || next.enabled === false) {
+      const { useAsDefault: _dropped, ...rest } = next;
+      next = rest;
+    }
+    remember(next);
+    await reconcile();
+    if (body.enabled === false) await restoreDefault().catch((cause: unknown) => { ctx.logger.warn(`workdsh-local-models: ${String(cause)}`); });
+    return Response.json(status(), { headers: { 'cache-control': 'no-store' } });
+  };
+
+  const connection = (ctx as Context & { connection: HostConnectionHandle }).connection;
+  const unregister = connection.fetch.register({ path: statusPath, methods: ['GET', 'HEAD', 'POST'], requestBody: 'buffered', fetch: respond });
+  ctx.effect(() => unregister, 'workdsh.local-models.fetch');
 
   ctx.effect(() => {
     let debounce: ReturnType<typeof setTimeout> | undefined;
     let watcher: FSWatcher | undefined;
-    if (config.modelsDir) {
+    if (modelsDir) {
       try {
-        watcher = watch(config.modelsDir, () => {
+        watcher = watch(modelsDir, () => {
           clearTimeout(debounce);
-          debounce = setTimeout(() => { void sync(); }, 1_500);
+          debounce = setTimeout(() => { void reconcile(); }, 1_500);
         });
         watcher.on('error', () => watcher?.close());
-      } catch (error) {
-        ctx.logger.warn(`workdsh-local-models: cannot watch ${config.modelsDir}: ${String(error)}`);
+      } catch (cause) {
+        ctx.logger.warn(`workdsh-local-models: cannot watch ${modelsDir}: ${String(cause)}`);
       }
     }
     // Poll quickly until the first sync lands (the server and the adapter
@@ -328,7 +553,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     // delay is chosen once the previous sync has finished.
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = (): void => {
-      void sync().then(() => {
+      void reconcile().then(() => {
         if (!stopped) timer = setTimeout(tick, synced ? config.intervalMs ?? 30_000 : 2_000);
       });
     };
@@ -338,6 +563,8 @@ export function apply(ctx: Context, config: Config = {}): void {
       clearTimeout(timer);
       clearTimeout(debounce);
       watcher?.close();
+      server?.terminate();
+      server = undefined;
     };
   }, 'workdsh.local-models.sync');
 }

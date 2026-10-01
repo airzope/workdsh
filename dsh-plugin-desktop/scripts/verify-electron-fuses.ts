@@ -8,7 +8,7 @@ import {
 import { FuseState } from '@electron/fuses/dist/constants.js'
 import { Arch, archFromString, getArchSuffix } from 'builder-util'
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DSH_VERSION } from './runtime-version.mjs'
@@ -83,6 +83,24 @@ export function smokeBundledWorkdshProfile(context: PackagedRuntimeContext): voi
     throw new Error(`Bundled llama.cpp smoke failed: ${String(llama.error ?? `${llama.stdout}${llama.stderr}`)}`)
   }
   console.log(llama.stdout.trim())
+  const sherpaPackage = join(runtime, 'profiles', 'workdsh', 'node_modules', 'sherpa-onnx-node')
+  const speech = spawnSync(node, [
+    fileURLToPath(new URL('./smoke-speech.mjs', import.meta.url)),
+    join(runtime, 'speech', 'sensevoice'),
+    existsSync(sherpaPackage) ? sherpaPackage : findSherpaPackage(join(runtime, 'profiles', 'workdsh', 'node_modules')),
+  ], { encoding: 'utf8', timeout: 300_000 })
+  if (speech.error || speech.status !== 0) {
+    throw new Error(`Bundled SenseVoice smoke failed: ${String(speech.error ?? `${speech.stdout}${speech.stderr}`)}`)
+  }
+  console.log(speech.stdout.trim())
+}
+
+/** The packaged sherpa-onnx-node, wherever pnpm placed it. */
+function findSherpaPackage(nodeModules: string): string {
+  const store = join(nodeModules, '.pnpm')
+  const entry = existsSync(store) ? readdirSync(store).find(name => name.startsWith('sherpa-onnx-node@')) : undefined
+  if (entry === undefined) throw new Error(`sherpa-onnx-node is missing from ${nodeModules}`)
+  return join(store, entry, 'node_modules', 'sherpa-onnx-node')
 }
 
 /** Injectable official fuse reader used by focused tests. */

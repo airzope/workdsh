@@ -1,5 +1,5 @@
 # Bilingual-pair consistency record: the git blob hash of each side as of the last
 # confirmed-consistent state. Both languages carry equal authority. Update both files
 # and re-record their hashes with git hash-object after editing either side.
-2026-09-29-bundled-llama-cpp.md: a5ad2307a43690a879f0a906a303b5d85c34fbfe
-2026-09-29-bundled-llama-cpp.zh.md: 8b048d1288b9fbef544af402531fcf727e8c0582
+2026-10-01-bundled-sensevoice-int4.md: 8542fcd86fe2623e06965dc2aa4126196ea5e19c
+2026-10-01-bundled-sensevoice-int4.zh.md: 278d0dc00939fb3187ae45094ffa194adfdc1319

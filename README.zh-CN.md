@@ -4,7 +4,7 @@
 <p align="center">WorkDSH 将资料、专家、技能和连接器带入同一工作台；接入 SkillHub 技能目录，并支持安装 DSH 社区插件。</p>
 <p align="center"><a href="#下载桌面版">下载桌面版</a> · <a href="#从资料到成果">了解工作流</a> · <a href="docs/user-guide.md">使用指南</a> · <a href="README.md">English</a></p>
 
-[![Desktop release](https://img.shields.io/badge/Desktop-2.0.6--alpha.3-176BFF)](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3) [![GitHub stars](https://img.shields.io/github/stars/techflag/workdsh?label=stars)](https://github.com/techflag/workdsh) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Desktop release](https://img.shields.io/badge/Desktop-2.0.6--alpha.4-176BFF)](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4) [![GitHub stars](https://img.shields.io/github/stars/techflag/workdsh?label=stars)](https://github.com/techflag/workdsh) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ![WorkDSH 项目主页：项目、模板与完整桌面侧栏](workdsh-web/assets/screenshots/workdsh-projects-alpha8-dark.png)
 
@@ -58,18 +58,18 @@ WorkDSH 接入两个独立维护的目录：[SkillHub](https://skillhub.cn/) 提
 
 ## 下载桌面版
 
-当前桌面安装包版本为 **2.0.6-alpha.3**（[GitHub Release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.3)）：
+当前桌面安装包版本为 **2.0.6-alpha.4**（[GitHub Release](https://github.com/airzope/workdsh/releases/tag/desktop-v2.0.6-alpha.4)）：
 
 | 平台 | 下载 |
 | --- | --- |
-| Windows x64 | [WorkDSH Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.3-x64-Setup.exe) |
-| Windows 7 SP1 x64（离线） | [WorkDSH win7 Offline-Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.3-win7-x64-Offline-Setup.exe) |
-| Ubuntu 20.04+ x64（amd64） | [WorkDSH amd64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.3-linux-amd64.deb) |
-| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.3-linux-arm64.deb) |
-| macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.3-arm64.dmg) |
-| macOS Intel | [WorkDSH x64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.3/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.3-x64.dmg) |
+| Windows x64 | [WorkDSH Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-windows-x64--WorkDSH-2.0.6-alpha.4-x64-Setup.exe) |
+| Windows 7 SP1 x64（离线） | [WorkDSH win7 Offline-Setup.exe](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-windows7-x64--WorkDSH-2.0.6-alpha.4-win7-x64-Offline-Setup.exe) |
+| Ubuntu 20.04+ x64（amd64） | [WorkDSH amd64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-linux-x64--WorkDSH-2.0.6-alpha.4-linux-amd64.deb) |
+| Ubuntu 20.04+ arm64 | [WorkDSH arm64.deb](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-linux-arm64--WorkDSH-2.0.6-alpha.4-linux-arm64.deb) |
+| macOS Apple Silicon | [WorkDSH arm64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-arm64--WorkDSH-2.0.6-alpha.4-arm64.dmg) |
+| macOS Intel | [WorkDSH x64.dmg](https://github.com/airzope/workdsh/releases/download/desktop-v2.0.6-alpha.4/dsh-plugin-desktop-macos-x64--WorkDSH-2.0.6-alpha.4-x64.dmg) |
 
-Desktop 安装包默认内置 Node.js 和 Python 运行时，普通用户无需单独安装。安装包还内置 llama.cpp 本地模型服务：把 GGUF 模型文件放进模型文件夹，即可不联网、不用 API 密钥使用开源模型（[说明](docs/user-guide.md#本地模型)）。Windows 7 SP1 x64 为尽力支持：其离线安装包会在缺失时一并安装 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 与 Microsoft VC++ 运行库（[说明](docs/faq.md#能在-windows-7-上运行吗)）。Ubuntu 使用 `sudo apt install ./WorkDSH-<版本>-linux-<架构>.deb` 安装（[说明](docs/faq.md#如何在-ubuntu-上安装)）。当前为 **Alpha 版**：项目资料引用、专家执行及不同 Office 格式的端到端体验仍在验收中。macOS DMG 支持 macOS 15 及以上，未签名（首次打开见[说明](docs/faq.md#如何在-macos-上安装)）；更新请从 [Releases](https://github.com/techflag/workdsh/releases) 下载。开始使用前请阅读[用户指南](docs/user-guide.md)和[常见问题](docs/faq.md)。
+Desktop 安装包默认内置 Node.js 和 Python 运行时，普通用户无需单独安装。安装包还内置 llama.cpp 本地模型服务：首次启动时选择本地模型，再把 GGUF 模型文件放进模型文件夹，即可不联网、不用 API 密钥使用开源模型（[说明](docs/user-guide.md#本地模型)）。语音输入使用内置的 SenseVoiceSmall INT4 模型离线识别，在“插件”中开启即可（[说明](docs/user-guide.md#语音输入)）。Windows 7 SP1 x64 为尽力支持：其离线安装包会在缺失时一并安装 [VxKex NEXT](https://github.com/YuZhouRen86/VxKex-NEXT) 与 Microsoft VC++ 运行库（[说明](docs/faq.md#能在-windows-7-上运行吗)）。Ubuntu 使用 `sudo apt install ./WorkDSH-<版本>-linux-<架构>.deb` 安装（[说明](docs/faq.md#如何在-ubuntu-上安装)）。当前为 **Alpha 版**：项目资料引用、专家执行及不同 Office 格式的端到端体验仍在验收中。macOS DMG 支持 macOS 15 及以上，未签名（首次打开见[说明](docs/faq.md#如何在-macos-上安装)）；更新请从 [Releases](https://github.com/techflag/workdsh/releases) 下载。开始使用前请阅读[用户指南](docs/user-guide.md)和[常见问题](docs/faq.md)。
 
 ## 开发与文档
 

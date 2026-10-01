@@ -57,11 +57,12 @@ export function BrandName() {
   return <span data-testid="workdsh-brand">{brand?.name ?? ''}</span>;
 }
 
-export function BrandMark() {
+/** The brand mark as a square of the size its slot asks for: the sidebar's, or the chat start page's. */
+export function BrandMark({ size = 22 }: { readonly size?: number }) {
   const brand = useBrand();
-  if (brand === undefined) return <span aria-hidden style={{ display: 'inline-block', width: 22, height: 22 }} />;
-  if (brand.mark) return <img src={brand.mark} width={22} height={22} alt="" aria-hidden style={{ objectFit: 'contain' }} />;
-  return <LogoMark size={22} />;
+  if (brand === undefined) return <span aria-hidden style={{ display: 'block', width: size, height: size }} />;
+  if (brand.mark) return <img src={brand.mark} width={size} height={size} alt="" aria-hidden style={{ display: 'block', objectFit: 'contain' }} />;
+  return <LogoMark size={size} />;
 }
 
 export function DiagnosticsMark() {

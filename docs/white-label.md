@@ -12,7 +12,7 @@ WorkDSH Desktop 的产品名称、图标和标识在**构建时**由一个品牌
 dsh-plugin-desktop/branding/acme/
 ├── brand.json
 ├── logo.png     # 正方形 PNG，至少 512 像素，建议 1024 像素
-└── mark.svg     # 可选：简化标志，用于小尺寸图标、托盘和侧栏
+└── mark.svg     # 可选：简化标志，用于小尺寸图标、托盘、侧栏和对话首页
 ```
 
 `brand.json` 示例：
@@ -47,7 +47,7 @@ dsh-plugin-desktop/branding/acme/
 | `mark` | 简化标志 | SVG，颜色写在 `fill`/`stroke` 属性中，不使用 `<style>` 或 `style` |
 | `color` | 单色托盘图标的颜色 | `#RRGGBB`；省略时保留标志原色 |
 
-没有 `mark` 时，小尺寸图标和侧栏使用 `logo`，托盘模板图标取 `logo` 的轮廓。
+没有 `mark` 时，小尺寸图标、侧栏和对话首页使用 `logo`，托盘模板图标取 `logo` 的轮廓。
 
 ## 构建
 
@@ -66,7 +66,7 @@ corepack yarn workspace dsh-plugin-desktop dist:linux   # 或 dist:win、dist:ma
 ## 品牌覆盖的范围
 
 - 安装包和应用：Windows 安装包、便携包和 Windows 7 离线安装包的文件名，`AcmeDesk.exe`，安装目录，桌面与开始菜单快捷方式，卸载项名称和图标；macOS 的 `AcmeDesk.app`、Dock 图标和显示名；Linux 的 `/opt/AcmeDesk`、`acmedesk` 命令、Debian 包名和桌面项。
-- 运行时：窗口标题和图标、用户数据目录、侧栏品牌名称与标志、网页标题、浏览器提示词中的产品名，以及导出的 XLSX 和 PDF 的创建者。
+- 运行时：窗口标题和图标、用户数据目录、侧栏品牌名称与标志、对话首页的标志、网页标题、浏览器提示词中的产品名，以及导出的 XLSX 和 PDF 的创建者。
 - Web 部署：Host 读取 `WORKDSH_BRAND_NAME` 和 `WORKDSH_BRAND_MARK`（标志文件路径，SVG 或 PNG，最大 256 KiB），在 `/api/workdsh-brand` 提供给界面。Desktop 载体会自动设置这两个变量。
 
 ## 限制
