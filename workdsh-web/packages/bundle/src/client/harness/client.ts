@@ -8,12 +8,14 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client';
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client';
 import type {} from '@deepseek-ai/dsh-client-ui-session/client';
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client';
+import type {} from '@deepseek-ai/dsh-client-ui-settings-models/client';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client';
 import * as workbench from 'workdsh-plugin-workbench';
 import { BrandMark, BrandName, DiagnosticsMark, loadBrand } from '../components/Brand.js';
 import { DiagnosticsPanel, type Inventory } from '../components/DiagnosticsPanel.js';
 import { NavigationLocation } from '../components/NavigationLocation.js';
+import { LocalModelSignIn, LocalModelsCard } from '../components/LocalModels.js';
 import { AgentBrowserPage, agentBrowserKind, readAgentBrowserFrame } from '../components/AgentBrowserPage.js';
 
 declare module '@deepseek-ai/cordis' {
@@ -108,6 +110,10 @@ export function apply(ctx: Context): void {
   ctx.slots.inject('sidebar.brand.mark', () => ctx.slots.register({ name: 'sidebar.brand.mark', priority: -10 }, BrandMark));
   // The chat start page shows the same mark in place of DSH's animated fish.
   ctx.slots.inject('conversation.hero.brand.mark', () => ctx.slots.register({ name: 'conversation.hero.brand.mark', priority: -10 }, BrandMark));
+  // First-run setup offers the bundled llama.cpp server before the API key,
+  // and the Models page shows that server beside the provider routes.
+  ctx.slots.inject('settings.models.sign-in', () => ctx.slots.register({ name: 'settings.models.sign-in' }, LocalModelSignIn));
+  ctx.slots.inject('settings.models.footer', () => ctx.slots.register({ name: 'settings.models.footer', id: 'workdsh-local-models' }, LocalModelsCard));
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'workdsh-location', inject: () => ({ panelToView, selectView }),
   }, NavigationLocation));

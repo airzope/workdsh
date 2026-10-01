@@ -19,14 +19,17 @@
       disabled: !!js "!process.env.DSH_ELECTRON_EXECUTABLE"
       config:
         electronExecutable: !!js "process.env.DSH_ELECTRON_EXECUTABLE"
-    # Desktop starts a llama.cpp router for the user's models folder and passes
-    # its address; GGUF models there become the local model route.
+    # Desktop passes its bundled llama-server and the user's models folder; the
+    # plugin starts the server when the user chooses local models, or once the
+    # folder holds one. A Web deployment can name its own router's address.
     - id: workdsh-local-models
       name: workdsh-bundle/local-models
-      disabled: !!js "!process.env.WORKDSH_LLAMA_BASE_URL"
+      disabled: !!js "!process.env.WORKDSH_LLAMA_BASE_URL && !process.env.WORKDSH_LLAMA_SERVER"
       config:
         baseURL: !!js "process.env.WORKDSH_LLAMA_BASE_URL"
+        server: !!js "process.env.WORKDSH_LLAMA_SERVER"
         modelsDir: !!js "process.env.WORKDSH_LLAMA_MODELS_DIR"
+        stateDir: !!js "process.env.WORKDSH_LLAMA_STATE_DIR"
         contextSize: !!js "Number(process.env.WORKDSH_LLAMA_CONTEXT_SIZE) || undefined"
     - id: auto-review
       name: '@deepseek-ai/dsh-experimental-auto-review'
